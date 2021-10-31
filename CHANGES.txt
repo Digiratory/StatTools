@@ -1,0 +1,9 @@
+1.0.0
+    Uploaded library on PyPi. That's the first release that include Filter, DFA, FilteredArray and
+    Seeker.
+
+1.0.1 - 1.0.9
+    Minor QSS updates
+
+1.1.0
+    Added C-compiled modules
