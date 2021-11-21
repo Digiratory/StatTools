@@ -113,9 +113,7 @@ if __name__ == '__main__':
 
     d = FilteredArray(1.5, 1024, set_mean=10, set_std=3).generate(n_vectors=100)
 
-    x = CorrelatedArray(data=d).create(0.7, h_control=False).to_numpy()
+    x = CorrelatedArray(data=d, threads=1).create(0.7, h_control=True).to_numpy()
 
     c = PearsonParallel(x).create_matrix()
     print(mean(c))
-    heatmap(c)
-    show()
