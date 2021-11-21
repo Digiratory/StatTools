@@ -239,6 +239,7 @@ class FilteredArray(Filter):
 
 if __name__ == '__main__':
     x = normal(0, 1, (1000, 1440 * 3))
+
     t1 = time.perf_counter()
     filter_ = FilteredArray(0.8, 1440, set_mean=10, set_std=3)
     vectors = filter_.generate(n_vectors=len(x), threads=12, progress_bar=True)
