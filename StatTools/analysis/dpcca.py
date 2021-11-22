@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from ctypes import c_double
 from functools import partial
 from multiprocessing import Pool
 from matplotlib.pyplot import plot, semilogy, show, ylabel, xlabel, legend, title
@@ -8,10 +9,11 @@ from numpy.linalg import inv
 from typing import Union
 from contextlib import closing
 from StatTools.generators.base_filter import FilteredArray
+from StatTools.auxiliary import SharedBuffer
 from MulticoreStatTools import DFA
 
 
-def dpcca_worker(s: Union[int, Iterable], arr: ndarray, step: float, pd: int) -> Union[tuple, None]:
+def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float, pd: int) -> Union[tuple, None]:
     """
     Core of DPCAA algorithm. Takes bunch of S-values and returns 3 3d-matrices: first index
     represents S value.
@@ -27,7 +29,7 @@ def dpcca_worker(s: Union[int, Iterable], arr: ndarray, step: float, pd: int) ->
 
     for s_i, s_val in enumerate(s_current):
 
-        V = arange(0, arr.shape[1] - s_val, int(step*s_val))
+        V = arange(0, arr.shape[1] - s_val, int(step * s_val))
         Xw = arange(s_val, dtype=int)
         Y = zeros((arr.shape[0], len(V)), dtype=object)
 
@@ -45,19 +47,19 @@ def dpcca_worker(s: Union[int, Iterable], arr: ndarray, step: float, pd: int) ->
         Y = array([concatenate(Y[i]) for i in range(Y.shape[0])])
 
         for n in range(arr.shape[0]):
-            for m in range(n+1):
+            for m in range(n + 1):
                 F[s_i][n][m] = mean(Y[n] * Y[m]) / (s_val - 1)
                 F[s_i][m][n] = F[s_i][n][m]
 
         for n in range(arr.shape[0]):
-            for m in range(n+1):
+            for m in range(n + 1):
                 R[s_i][n][m] = F[s_i][n][m] / sqrt(F[s_i][n][n] * F[s_i][m][m])
                 R[s_i][m][n] = R[s_i][n][m]
 
         Cinv = inv(R[s_i])
 
         for n in range(arr.shape[0]):
-            for m in range(n+1):
+            for m in range(n + 1):
                 if Cinv[n][n] * Cinv[m][m] < 0:
                     breakpoint()
 
@@ -67,7 +69,8 @@ def dpcca_worker(s: Union[int, Iterable], arr: ndarray, step: float, pd: int) ->
     return P, R, F
 
 
-def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int) -> tuple:
+def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int,
+          buffer=Union[bool, SharedBuffer]) -> tuple:
     """
     Detrended Partial-Cross-Correlation Analysis : https://www.nature.com/articles/srep08143
 
@@ -76,6 +79,7 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
     step: share of S - value. It's set usually as 0.5. The integer part of the number will be taken
     s : points where  fluctuation function F(s) is calculated. More on that in the article.
     process: num of workers to spawn
+    buffer: allows to share input array between processes. NOTE: if you
 
     Returns 3 3-d matrices where first dimension represents given S-value.
 
@@ -111,8 +115,26 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
 
     P, R, F = array([]), array([]), array([])
 
-    with closing(Pool(processes=processes)) as pool:
-        pool_result = pool.map(partial(dpcca_worker, arr=arr, pd=pd, step=step), S_by_workers)
+    if isinstance(buffer, bool):
+        if buffer:
+            shared_input = SharedBuffer(arr.shape, c_double)
+            shared_input.write(arr)
+
+            with closing(
+                    Pool(processes=processes, initializer=shared_input.buffer_init, initargs=({"ARR": shared_input},
+                                                                                              ))) as pool:
+                pool_result = pool.map(partial(dpcca_worker, arr=None, pd=pd, step=step), S_by_workers)
+
+        else:
+            with closing(Pool(processes=processes)) as pool:
+                pool_result = pool.map(partial(dpcca_worker, arr=arr, pd=pd, step=step), S_by_workers)
+
+    if isinstance(buffer, SharedBuffer):
+        with closing(
+                Pool(processes=processes, initializer=buffer.buffer_init, initargs=({"ARR": buffer},
+                                                                                          ))) as pool:
+            pool_result = pool.map(partial(dpcca_worker, arr=None, pd=pd, step=step), S_by_workers)
+
 
     for res in pool_result:
         P = res[0] if P.size < 1 else vstack((P, res[0]))
@@ -128,7 +150,7 @@ if __name__ == '__main__':
     function for second vector, calculate the slope and create a chart.
     """
     vectors_length = 10000
-    n_vectors = 100                         # (100, 10_000) dataset
+    n_vectors = 100  # (100, 10_000) dataset
     s = [pow(2, i) for i in range(3, 14)]
     step = 0.5
     poly_deg = 2
@@ -143,7 +165,7 @@ if __name__ == '__main__':
 
         # x = loadtxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt")
 
-        P, R, F = dpcca(x, poly_deg, 0.5, s, threads)
+        P, R, F = dpcca(x, poly_deg, 0.5, s, threads, buffer=True)
 
         s_vals = [s_ for s_ in range(F.shape[0])]
 
