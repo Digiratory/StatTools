@@ -5,8 +5,6 @@ from numpy import array, frombuffer, copyto, sort, mean
 from numpy.random import normal
 from ctypes import c_double
 from numpy.random import normal
-from pympler import asizeof, tracker
-
 
 def worker(i, shape):
     print(f"Process {i + 1} started . . .")
@@ -38,8 +36,6 @@ def run_test():
         you have to reallocate another chunk as far as I'm concerned.
 
         """
-
-    tr = tracker.SummaryTracker()
 
     shape = (3 * 10 ** 4, 10 ** 4)  # array shape
     processes = cpu_count()  # size of the pool

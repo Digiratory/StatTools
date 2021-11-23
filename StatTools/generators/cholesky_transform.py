@@ -7,7 +7,6 @@ from StatTools.generators.base_filter import FilteredArray
 from numpy import full, matmul, mean
 from numpy.linalg import cholesky
 import pandas as pd
-from MulticoreStatTools import PearsonParallel
 
 
 class CorrelatedArray:
@@ -111,5 +110,4 @@ if __name__ == '__main__':
 
     x = CorrelatedArray(data=d, threads=1).create(0.7, h_control=True).to_numpy()
 
-    c = PearsonParallel(x).create_matrix()
     print(mean(c))

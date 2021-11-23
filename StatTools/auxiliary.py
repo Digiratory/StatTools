@@ -3,7 +3,6 @@ import time
 from multiprocessing import Value, Lock, Array
 from threading import Thread
 from numpy import ndarray, array, frombuffer, copyto, s_
-from rich.progress import Progress
 from typing import Union
 from ctypes import c_double, c_int64
 from functools import reduce
@@ -138,6 +137,7 @@ class SharedBuffer:
 
     def to_array(self):
         return self.__get_handle().reshape(self.shape)
+
 
     @staticmethod
     def buffer_init(vars_to_update):
