@@ -74,7 +74,7 @@ class SharedBuffer:
     """
 
     def __init__(self, shape: tuple, dtype=Union[c_double, c_int64]):
-        if len(shape) > 2:
+        if len(shape) > 3:
             raise NotImplementedError("Only 1d, 2d- matrices are supported for now!")
 
         self.dtype, self.shape = dtype, shape
@@ -107,6 +107,9 @@ class SharedBuffer:
             return self[self.iter_counter - 1]
         self.iter_counter = 0
         raise StopIteration
+
+    def __del__(self):
+        del self.buffer
 
     def __get_handle(self):
         return frombuffer(self.buffer.get_obj(), dtype=self.dtype).reshape(self.shape)

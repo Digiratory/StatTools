@@ -4,16 +4,17 @@ from functools import partial
 from multiprocessing import Pool
 from matplotlib.pyplot import plot, semilogy, show, ylabel, xlabel, legend, title
 from numpy import array, ndarray, log, array_split, arange, loadtxt, polyfit, polyval, zeros, mean, sqrt, dstack, stack, \
-    vstack, cumsum, concatenate, any, log10, round, savetxt
+    vstack, cumsum, concatenate, any, log10, round, savetxt, int64
 from numpy.linalg import inv
 from typing import Union
 from contextlib import closing
 from StatTools.generators.base_filter import FilteredArray
 from StatTools.auxiliary import SharedBuffer
-from MulticoreStatTools import DFA
 
 
-def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float, pd: int) -> Union[tuple, None]:
+# @profile()
+def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float, pd: int, buffer_in_use: bool) -> \
+        Union[tuple, None]:
     """
     Core of DPCAA algorithm. Takes bunch of S-values and returns 3 3d-matrices: first index
     represents S value.
@@ -21,17 +22,19 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
 
     s_current = [s] if not isinstance(s, Iterable) else s
 
-    cumsum_arr = cumsum(arr, axis=1)
+    cumsum_arr = SharedBuffer.get("ARR") if buffer_in_use else cumsum(arr, axis=1)
 
-    F = zeros((len(s_current), arr.shape[0], arr.shape[0]), dtype=float)
-    R = zeros((len(s_current), arr.shape[0], arr.shape[0]), dtype=float)
-    P = zeros((len(s_current), arr.shape[0], arr.shape[0]), dtype=float)
+    shape = cumsum_arr.shape if buffer_in_use else arr.shape
+
+    F = zeros((len(s_current), shape[0], shape[0]), dtype=float)
+    R = zeros((len(s_current), shape[0], shape[0]), dtype=float)
+    P = zeros((len(s_current), shape[0], shape[0]), dtype=float)
 
     for s_i, s_val in enumerate(s_current):
 
-        V = arange(0, arr.shape[1] - s_val, int(step * s_val))
+        V = arange(0, shape[1] - s_val, int(step * s_val))
         Xw = arange(s_val, dtype=int)
-        Y = zeros((arr.shape[0], len(V)), dtype=object)
+        Y = zeros((shape[0], len(V)), dtype=object)
 
         for n, vector in enumerate(cumsum_arr):
             for v_i, v in enumerate(V):
@@ -46,22 +49,22 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
 
         Y = array([concatenate(Y[i]) for i in range(Y.shape[0])])
 
-        for n in range(arr.shape[0]):
+        for n in range(shape[0]):
             for m in range(n + 1):
                 F[s_i][n][m] = mean(Y[n] * Y[m]) / (s_val - 1)
                 F[s_i][m][n] = F[s_i][n][m]
 
-        for n in range(arr.shape[0]):
+        for n in range(shape[0]):
             for m in range(n + 1):
                 R[s_i][n][m] = F[s_i][n][m] / sqrt(F[s_i][n][n] * F[s_i][m][m])
                 R[s_i][m][n] = R[s_i][n][m]
 
         Cinv = inv(R[s_i])
 
-        for n in range(arr.shape[0]):
+        for n in range(shape[0]):
             for m in range(n + 1):
                 if Cinv[n][n] * Cinv[m][m] < 0:
-                    breakpoint()
+                    raise ValueError("Inverted matrix has negative values!")
 
                 P[s_i][n][m] = -Cinv[n][m] / sqrt(Cinv[n][n] * Cinv[m][m])
                 P[s_i][m][n] = P[s_i][n][m]
@@ -69,8 +72,17 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
     return P, R, F
 
 
+def start_pool_with_buffer(buffer: SharedBuffer, processes: int, s_by_workers: ndarray, pd: int, step: float):
+    buffer.apply_in_place(cumsum, by_1st_dim=True)
+
+    with closing(Pool(processes=processes, initializer=buffer.buffer_init, initargs=({"ARR": buffer},))) as pool:
+        pool_result = pool.map(partial(dpcca_worker, arr=None, pd=pd, step=step, buffer_in_use=True), s_by_workers)
+
+    return pool_result
+
+
 def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int,
-          buffer=Union[bool, SharedBuffer]) -> tuple:
+          buffer: Union[bool, SharedBuffer] = False) -> tuple:
     """
     Detrended Partial-Cross-Correlation Analysis : https://www.nature.com/articles/srep08143
 
@@ -105,7 +117,7 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
         raise ValueError("Cannot use S > L / 4")
 
     if processes == 1 or len(s) == 1:
-        return dpcca_worker(s, arr, step, pd)
+        return dpcca_worker(s, arr, step, pd, buffer_in_use=False)
     else:
         if processes > len(s):
             processes = len(s)
@@ -120,21 +132,17 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
             shared_input = SharedBuffer(arr.shape, c_double)
             shared_input.write(arr)
 
-            with closing(
-                    Pool(processes=processes, initializer=shared_input.buffer_init, initargs=({"ARR": shared_input},
-                                                                                              ))) as pool:
-                pool_result = pool.map(partial(dpcca_worker, arr=None, pd=pd, step=step), S_by_workers)
+            pool_result = start_pool_with_buffer(shared_input, processes, S_by_workers, pd, step)
 
         else:
             with closing(Pool(processes=processes)) as pool:
-                pool_result = pool.map(partial(dpcca_worker, arr=arr, pd=pd, step=step), S_by_workers)
+                pool_result = pool.map(partial(dpcca_worker, arr=arr, pd=pd, step=step, buffer_in_use=False),
+                                       S_by_workers)
 
-    if isinstance(buffer, SharedBuffer):
-        with closing(
-                Pool(processes=processes, initializer=buffer.buffer_init, initargs=({"ARR": buffer},
-                                                                                          ))) as pool:
-            pool_result = pool.map(partial(dpcca_worker, arr=None, pd=pd, step=step), S_by_workers)
-
+    elif isinstance(buffer, SharedBuffer):
+        pool_result = start_pool_with_buffer(buffer, processes, S_by_workers, pd, step)
+    else:
+        raise ValueError("Wrong type of input buffer!")
 
     for res in pool_result:
         P = res[0] if P.size < 1 else vstack((P, res[0]))
@@ -156,16 +164,18 @@ if __name__ == '__main__':
     poly_deg = 2
 
     vector_index = 1
-    threads = 12
+    threads = 4
 
     for h in (0.5, 0.9, 1.5):
         # We can generate new dataset using statement below
-        x = FilteredArray(h, vectors_length).generate(n_vectors=n_vectors, progress_bar=False, threads=threads)
-        savetxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt", x)
+        # x = FilteredArray(h, vectors_length).generate(n_vectors=n_vectors, progress_bar=False, threads=threads)
+        # savetxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt", x)
 
-        # x = loadtxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt")
+        x = loadtxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt")
 
-        P, R, F = dpcca(x, poly_deg, 0.5, s, threads, buffer=True)
+        # x = normal(0, 1, (10 ** 3, 10 ** 3))
+
+        P, R, F = dpcca(x, poly_deg, 0.5, s, 4, buffer=True)
 
         s_vals = [s_ for s_ in range(F.shape[0])]
 
@@ -185,3 +195,4 @@ if __name__ == '__main__':
         show()
 
         print(h, coefs)
+

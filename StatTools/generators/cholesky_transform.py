@@ -1,17 +1,13 @@
 from multiprocessing import cpu_count
-from typing import Union, Optional
+from typing import Union
 from collections.abc import Iterable
 
-from matplotlib.pyplot import show
-
-from StatTools.dfa import DFA
+from StatTools.analysis.dfa import DFA
 from StatTools.generators.base_filter import FilteredArray
-from numpy.random import normal
-from numpy import full, matmul, ndarray, unique, savetxt, mean
+from numpy import full, matmul, mean
 from numpy.linalg import cholesky
 import pandas as pd
 from MulticoreStatTools import PearsonParallel
-from seaborn import heatmap
 
 
 class CorrelatedArray:

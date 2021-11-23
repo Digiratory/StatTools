@@ -4,7 +4,7 @@ from multiprocessing import Pool, Value, Array, Lock
 from ctypes import c_double
 from contextlib import closing
 from threading import Thread
-from StatTools.dfa import bar_manager
+from StatTools.analysis.dfa import bar_manager
 from functools import partial
 
 

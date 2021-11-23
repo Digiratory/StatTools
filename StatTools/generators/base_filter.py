@@ -3,11 +3,11 @@ from contextlib import closing
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from random import gauss
-from numpy import array, array_split, ndarray, linspace, zeros, zeros_like, fromiter, vstack, angle, exp, std, mean, \
-    abs, concatenate, take
+from numpy import array, array_split, ndarray, linspace, zeros, fromiter, vstack, angle, exp, std, mean, \
+    abs, take
 from numpy.fft import rfft, irfft
 from numpy.random.mtrand import normal
-from StatTools.dfa import DFA
+from StatTools.analysis.dfa import DFA
 from tqdm import tqdm
 from StatTools.auxiliary import CheckNumpy
 import platform
