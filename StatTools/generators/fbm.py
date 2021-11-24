@@ -1,5 +1,5 @@
 from functools import reduce, partial
-from numpy import int64, save, nonzero, where, uint8, array, max, min, ndarray
+from numpy import int64, save, nonzero, where, uint8, array, max, min, ndarray, get_include
 from numpy.random import randn, normal
 from math import floor
 from ctypes import c_double
@@ -22,7 +22,6 @@ def FBMotion(h: float, field_size: int):
     """
     This is the algorithm. It need C version for sure.
     """
-
 
     n = 2 ** field_size + 1
     shape = n, n
@@ -67,6 +66,7 @@ def FBMotion(h: float, field_size: int):
 
 
 if __name__ == '__main__':
-    r = FBMotion(1.6, 9)
-    im = Image.fromarray(r)
-    im.save("filename.jpeg")
+    # r = FBMotion(1.6, 9)
+    # im = Image.fromarray(r)
+    # im.save("filename.jpeg")
+    pass

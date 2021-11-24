@@ -5,13 +5,22 @@
 #include <random>
 #include <iostream>
 #include <fstream>
-// #include <StatTools.h>
+
 
 double get_exponential_dist_value(double lambda)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::exponential_distribution<double> dist(1/lambda);
+    return dist(gen);
+}
+
+
+double get_gauss_dist_value()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<double> dist(0.0, 1.0);
     return dist(gen);
 }
 
@@ -179,8 +188,108 @@ static PyObject* get_waiting_time(PyObject* self, PyObject* args){
 
 }
 
+
+
+static PyObject* fbm_core(PyObject* self, PyObject* args){
+    PyArrayObject* input_array=NULL;
+    double H;
+    int N;
+
+
+    if (!PyArg_ParseTuple(args, "O!di", &PyArray_Type, &input_array, &H, &N)){
+        PyErr_SetString(PyExc_RuntimeError, "\t[C-API ERROR] Cannot parse input args!");
+        return NULL;
+    }
+
+    if (PyArray_TYPE(input_array) != NPY_FLOAT64)
+    {
+        PyErr_SetString(PyExc_ValueError, "\t![C-API ERROR] Array has wrong datatype! Only float and integer values are supported!");
+        return NULL;
+    }
+    
+    double* F = (double*) PyArray_DATA((PyArrayObject*) input_array);
+    npy_intp first_dim = (npy_intp)PyArray_SHAPE(input_array)[0];
+    npy_intp second_dim = (npy_intp)PyArray_SHAPE(input_array)[1];
+
+    // ------------------------- Now the algo itself ----------------------------------
+
+    int n = pow(2.0, N) + 1;
+
+    F[0*second_dim + 0] = get_gauss_dist_value();
+    F[0*second_dim + second_dim-1] = get_gauss_dist_value();
+    F[(first_dim - 1)*second_dim + 0] = get_gauss_dist_value();
+    F[(first_dim - 1)*second_dim + second_dim - 1] = get_gauss_dist_value();
+
+    double min_val = 0.0;
+    double max_val = 0.0;
+
+    for (int k=1; k < N + 1; k++){
+        int m = pow(2.0, k);
+        int fl = floor(n / m);
+
+        int l1 = fl;
+        int s = fl * 2;
+        int l2 = floor((m - 1) * n / m) + 1;
+
+        for (int i=l1; i < l2; i += s){
+            for (int j=l1; j < l2; j += s){
+                
+                double v1 = F[(i - fl)*second_dim + j - fl];
+                double v2 = F[(i - fl)*second_dim + j + fl];
+                double v3 = F[(i + fl)*second_dim + j - fl];
+                double v4 = F[(i + fl)*second_dim + j + fl];
+
+                F[i*second_dim + j] = (v1 + v2 + v3 + v4) / 4;
+            }
+        } 
+
+        for (int i=0; i < n + 1; i += s){
+            for (int j=fl; j < l2; j += s){
+                F[i*second_dim + j] = (F[i*second_dim + j - fl] + F[i*second_dim + j + fl]) / 2;
+            }
+        }
+
+        for (int j=0; j < n + 1; j += s){
+            for (int i=fl; i < l2; i += s){
+                F[i*second_dim + j] = (F[(i - fl)*second_dim + j] + F[(i + fl)*second_dim + j]) / 2;
+            }
+        }
+
+        for (int i = 0; i <  first_dim; i ++) {
+            for (int j = 0; j < second_dim; j ++){
+
+                if (F[i*second_dim + j] != 0){
+                    F[i*second_dim + j] = F[i*second_dim + j] + pow(0.5, (k * (H - 1))) * get_gauss_dist_value();
+
+                    if (F[i*second_dim + j] < min_val){
+                        min_val = F[i*second_dim + j];
+                    }
+                    if (F[i*second_dim + j] > max_val){
+                        max_val = F[i*second_dim + j];
+                    }
+                }
+
+            }
+        }
+    }
+
+    double diff = max_val - min_val;
+
+    for(int i=0; i < first_dim; i ++){
+        for (int j=0; j < second_dim; j ++){
+            F[i*second_dim + j] = (F[i*second_dim + j] - min_val) / diff * 255.0;
+        }
+    }
+    
+
+    PyObject* ret = Py_None;
+    return ret;
+}
+
+
 static PyMethodDef methods[] = {
     {"get_waiting_time", get_waiting_time, METH_VARARGS, "Returns Tw (average waiting time) of given vector."},
+    {"fbm_core", fbm_core, METH_VARARGS, "Fractal Brownian Motion core algorithm. Way faster than Python implementation"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -199,38 +308,29 @@ PyInit_C_StatTools(void) {
 }
 
 
-/*void test_func(double* arr, int size){
-
-    for (int i=0; i < size; i ++){
-        std::cout << arr[i] << std::endl;
-    }
-
-}*/
-
-
 int main() {
-    std::vector<double> numbers;
-    std::ifstream inputFile("test_array.txt");        // Input file stream object
+    // std::vector<double> numbers;
+    // std::ifstream inputFile("test_array.txt");        // Input file stream object
 
-    if (inputFile.good()) {
-        double current_number;
-        while (inputFile >> current_number){
-            numbers.push_back(current_number);
-        }
-        inputFile.close();
-    }
+    // if (inputFile.good()) {
+    //     double current_number;
+    //     while (inputFile >> current_number){
+    //         numbers.push_back(current_number);
+    //     }
+    //     inputFile.close();
+    // }
 
-    double* input_pointer = numbers.data();
+    // double* input_pointer = numbers.data();
 
 
-    std::vector<double> U = {0.5, 0.6, 0.7, 0.8, 0.9};
-    double* u_pointer = U.data();
+    // std::vector<double> U = {0.5, 0.6, 0.7, 0.8, 0.9};
+    // double* u_pointer = U.data();
 
-    std::vector<double> curve = model(numbers, U);
+    // std::vector<double> curve = model(numbers, U);
     
-    for(int i =0 ; i < 5; i ++){
-        std::cout << curve[i] <<std::endl;
-    }
+    // for(int i =0 ; i < 5; i ++){
+    //     std::cout << curve[i] <<std::endl;
+    // }
     
     /*Py_Initialize();
     PyRun_SimpleString("print('Started! ! !')");
