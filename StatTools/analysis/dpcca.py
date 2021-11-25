@@ -2,14 +2,23 @@ from collections.abc import Iterable
 from ctypes import c_double
 from functools import partial
 from multiprocessing import Pool
-from matplotlib.pyplot import plot, semilogy, show, ylabel, xlabel, legend, title
+from matplotlib.pyplot import plot, semilogy, show, ylabel, xlabel, legend, title, loglog
 from numpy import array, ndarray, log, array_split, arange, loadtxt, polyfit, polyval, zeros, mean, sqrt, dstack, stack, \
-    vstack, cumsum, concatenate, any, log10, round, savetxt, int64
+    vstack, cumsum, concatenate, any, log10, round, savetxt, int64, convolve, ones, insert, append
 from numpy.linalg import inv
 from typing import Union
 from contextlib import closing
-from StatTools.generators.base_filter import FilteredArray
+from numpy.random import normal
+from tqdm import tqdm
+from StatTools.generators.base_filter import Filter
 from StatTools.auxiliary import SharedBuffer
+
+
+def movmean(arr: ndarray, k):
+    conv = convolve(arr, ones((k, ))/k, mode='valid')
+    conv = insert(conv, 0, mean(arr[0:2]))
+    conv = append(conv, mean(arr[-2:]))
+    return conv
 
 
 # @profile()
@@ -81,7 +90,7 @@ def start_pool_with_buffer(buffer: SharedBuffer, processes: int, s_by_workers: n
     return pool_result
 
 
-def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int,
+def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int=1,
           buffer: Union[bool, SharedBuffer] = False) -> tuple:
     """
     Detrended Partial-Cross-Correlation Analysis : https://www.nature.com/articles/srep08143
@@ -104,8 +113,14 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
 
     """
 
+    concatenate_all = False         # concatenate if 1d array , no need to use 3d P, R, F
+    if arr.ndim == 1:
+        arr = array([arr])
+        concatenate_all = True
+
     if isinstance(s, Iterable):
         init_s_len = len(s)
+
         s = list(filter(lambda x: x <= arr.shape[1] / 4, s))
         if len(s) < 1:
             raise ValueError("All input S values are larger than vector shape / 4 !")
@@ -117,7 +132,13 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
         raise ValueError("Cannot use S > L / 4")
 
     if processes == 1 or len(s) == 1:
-        return dpcca_worker(s, arr, step, pd, buffer_in_use=False)
+        p, r, f = dpcca_worker(s, arr, step, pd, buffer_in_use=False)
+        if concatenate_all:
+            P = concatenate(p, axis=1)[0]
+            R = concatenate(r, axis=1)[0]
+            F = concatenate(f, axis=1)[0]
+            return P, R, F, s
+        return p, r, f, s
     else:
         if processes > len(s):
             processes = len(s)
@@ -149,7 +170,13 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
         R = res[1] if R.size < 1 else vstack((R, res[1]))
         F = res[2] if F.size < 1 else vstack((F, res[2]))
 
-    return P, R, F
+    if concatenate_all:
+        P = concatenate(P, axis=1)[0]
+        R = concatenate(R, axis=1)[0]
+        F = concatenate(F, axis=1)[0]
+
+    return P, R, F, s
+
 
 
 if __name__ == '__main__':
@@ -157,42 +184,45 @@ if __name__ == '__main__':
     Simple test. Having some S values , for 3 different H get fluctuation 
     function for second vector, calculate the slope and create a chart.
     """
-    vectors_length = 10000
-    n_vectors = 100  # (100, 10_000) dataset
-    s = [pow(2, i) for i in range(3, 14)]
-    step = 0.5
-    poly_deg = 2
+    # vectors_length = 10000
+    # n_vectors = 100  # (100, 10_000) dataset
+    # s = [pow(2, i) for i in range(3, 14)]
+    # step = 0.5
+    # poly_deg = 2
+    #
+    # vector_index = 1
+    # threads = 4
+    #
+    # for h in (0.5, 0.9, 1.5):
+    #     # We can generate new dataset using statement below
+    #     # x = FilteredArray(h, vectors_length).generate(n_vectors=n_vectors, progress_bar=False, threads=threads)
+    #     # savetxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt", x)
+    #
+    #     x = loadtxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt")
+    #
+    #     # x = normal(0, 1, (10 ** 3, 10 ** 3))
+    #
+    #     P, R, F = dpcca(x, poly_deg, 0.5, s, 4, buffer=True)
+    #
+    #     s_vals = [s_ for s_ in range(F.shape[0])]
+    #
+    #     fluct_func = [F[s_][vector_index][vector_index] for s_ in s_vals]
+    #     f = log10(fluct_func)
+    #
+    #     s_vals = log10([s[s_i] for s_i in s_vals])
+    #
+    #     coefs = polyfit(s_vals, f, deg=1)
+    #     regres = polyval(coefs, s_vals)
+    #     plot(s_vals, f, label="Fluct")
+    #     plot(s_vals, regres, label=f"Approx. slope={round(coefs[0], 2)}")
+    #     legend()
+    #     xlabel("Log(S)")
+    #     ylabel("Log( F(s) )")
+    #     title(f"H = {h}")
+    #     show()
+    #
+    #     print(h, coefs)
 
-    vector_index = 1
-    threads = 4
+    pass
 
-    for h in (0.5, 0.9, 1.5):
-        # We can generate new dataset using statement below
-        # x = FilteredArray(h, vectors_length).generate(n_vectors=n_vectors, progress_bar=False, threads=threads)
-        # savetxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt", x)
-
-        x = loadtxt("C:\\Users\\ak698\\Desktop\\work\\vectors.txt")
-
-        # x = normal(0, 1, (10 ** 3, 10 ** 3))
-
-        P, R, F = dpcca(x, poly_deg, 0.5, s, 4, buffer=True)
-
-        s_vals = [s_ for s_ in range(F.shape[0])]
-
-        fluct_func = [F[s_][vector_index][vector_index] for s_ in s_vals]
-        f = log10(fluct_func)
-
-        s_vals = log10([s[s_i] for s_i in s_vals])
-
-        coefs = polyfit(s_vals, f, deg=1)
-        regres = polyval(coefs, s_vals)
-        plot(s_vals, f, label="Fluct")
-        plot(s_vals, regres, label=f"Approx. slope={round(coefs[0], 2)}")
-        legend()
-        xlabel("Log(S)")
-        ylabel("Log( F(s) )")
-        title(f"H = {h}")
-        show()
-
-        print(h, coefs)
 
