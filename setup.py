@@ -9,11 +9,11 @@ module = Extension('C_StatTools',
 
 setup(
     name="StatTools",
-    version="1.1.1",
+    version="1.2.1",
     ext_modules=[module],
     author="Alexandr Kuzmenko",
     author_email="alexander.k.spb@gmail.com",
-    packages=["StatTools"],
+    packages=["StatTools", "StatTools.analysis", "StatTools.generators", "StatTools.tests"],
     include_package_data=True,
     install_requires=[
         "numpy >= 1.19.2",
