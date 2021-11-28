@@ -190,20 +190,37 @@ static PyObject* get_waiting_time(PyObject* self, PyObject* args){
 
 
 
+
+void set_item(PyArrayObject* arr, int i, int j, double value){
+    PyObject* float_value = PyFloat_FromDouble(value);
+    PyArray_SETITEM(arr, (char*)PyArray_GETPTR2(arr, i, j), float_value);
+    Py_DECREF(float_value);
+}
+
+double get_item(PyArrayObject* arr, int i, int j){
+    PyObject* item = PyArray_GETITEM(arr, (char*)PyArray_GETPTR2(arr, i, j));
+    double value = PyFloat_AsDouble(item);
+    Py_DECREF(item);
+    return value;
+}
+
+
 static PyObject* fbm_core(PyObject* self, PyObject* args){
     PyArrayObject* input_array=NULL;
     double H;
     int N;
+    PyObject* ret = Py_None;
+
 
 
     if (!PyArg_ParseTuple(args, "O!di", &PyArray_Type, &input_array, &H, &N)){
-        PyErr_SetString(PyExc_RuntimeError, "\t[C-API ERROR] Cannot parse input args!");
+        PyErr_SetString(PyExc_RuntimeError, "\t[C-API ERROR| FBM] Cannot parse input args!");
         return NULL;
     }
 
     if (PyArray_TYPE(input_array) != NPY_FLOAT64)
     {
-        PyErr_SetString(PyExc_ValueError, "\t![C-API ERROR] Array has wrong datatype! Only float and integer values are supported!");
+        PyErr_SetString(PyExc_ValueError, "\t![C-API ERROR| FBM] Array has wrong datatype! Only float and integer values are supported!");
         return NULL;
     }
     
@@ -223,8 +240,11 @@ static PyObject* fbm_core(PyObject* self, PyObject* args){
     double min_val = 0.0;
     double max_val = 0.0;
 
-    for (int k=1; k < N + 1; k++){
-        int m = pow(2.0, k);
+    double value = 0.0;
+    double v1, v2, v3, v4 = 0.0;
+
+    for (int k=1; k <= N; k++){
+        int m = pow(2, k);
         int fl = floor(n / m);
 
         int l1 = fl;
@@ -234,55 +254,58 @@ static PyObject* fbm_core(PyObject* self, PyObject* args){
         for (int i=l1; i < l2; i += s){
             for (int j=l1; j < l2; j += s){
                 
-                double v1 = F[(i - fl)*second_dim + j - fl];
-                double v2 = F[(i - fl)*second_dim + j + fl];
-                double v3 = F[(i + fl)*second_dim + j - fl];
-                double v4 = F[(i + fl)*second_dim + j + fl];
+                v1 = get_item(input_array, i - fl, j - fl);
+                v2 = get_item(input_array, i - fl, j + fl);
+                v3 = get_item(input_array, i + fl, j - fl);
+                v4 = get_item(input_array, i + fl, j + fl);
 
-                F[i*second_dim + j] = (v1 + v2 + v3 + v4) / 4;
+                set_item(input_array, i, j, (v1 + v2 + v3 + v4) / 4);
             }
         } 
 
-        for (int i=0; i < n + 1; i += s){
+        for (int i=0; i < n; i += s){
             for (int j=fl; j < l2; j += s){
-                F[i*second_dim + j] = (F[i*second_dim + j - fl] + F[i*second_dim + j + fl]) / 2;
+                value = (get_item(input_array, i, j - fl) + get_item(input_array, i, j + fl)) / 2;
+                set_item(input_array, i, j, value);
             }
         }
 
-        for (int j=0; j < n + 1; j += s){
+        for (int j=0; j < n; j += s){
             for (int i=fl; i < l2; i += s){
-                F[i*second_dim + j] = (F[(i - fl)*second_dim + j] + F[(i + fl)*second_dim + j]) / 2;
+                value = (get_item(input_array, i - fl, j) + get_item(input_array, i + fl, j)) / 2;
+                set_item(input_array, i, j, value);
             }
         }
 
         for (int i = 0; i <  first_dim; i ++) {
             for (int j = 0; j < second_dim; j ++){
 
-                if (F[i*second_dim + j] != 0){
-                    F[i*second_dim + j] = F[i*second_dim + j] + pow(0.5, (k * (H - 1))) * get_gauss_dist_value();
+                if (get_item(input_array, i, j) != 0){
+                    value = get_item(input_array, i, j);
+                    set_item(input_array, i, j, value + pow(0.5, (k * (H - 1))) * get_gauss_dist_value());
 
-                    if (F[i*second_dim + j] < min_val){
-                        min_val = F[i*second_dim + j];
+                    if (value < min_val){
+                        min_val = value;
                     }
-                    if (F[i*second_dim + j] > max_val){
-                        max_val = F[i*second_dim + j];
+                    if (value > max_val){
+                        max_val = value;
                     }
                 }
 
             }
         }
+
     }
 
     double diff = max_val - min_val;
 
     for(int i=0; i < first_dim; i ++){
         for (int j=0; j < second_dim; j ++){
-            F[i*second_dim + j] = (F[i*second_dim + j] - min_val) / diff * 255.0;
+            double value = (get_item(input_array, i, j) - min_val) / diff * 255.0;
+            set_item(input_array, i, j, value);
         }
     }
-    
 
-    PyObject* ret = Py_None;
     return ret;
 }
 
@@ -309,6 +332,16 @@ PyInit_C_StatTools(void) {
 
 
 int main() {
+    int nd = 2;
+    npy_intp dims[] = {1024, 1024};
+
+    PyObject* curve_output =  PyArray_SimpleNew(nd, dims, NPY_FLOAT64);
+
+    fbm_core(Py_None, curve_output);
+
+
+
+
     // std::vector<double> numbers;
     // std::ifstream inputFile("test_array.txt");        // Input file stream object
 

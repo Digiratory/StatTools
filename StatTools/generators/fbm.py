@@ -1,5 +1,9 @@
+import time
 from functools import reduce, partial
-from numpy import int64, save, nonzero, where, uint8, array, max, min, ndarray, get_include
+from typing import Optional
+
+from memory_profiler import profile
+from numpy import int64, save, nonzero, where, uint8, array, max, min, ndarray, get_include, zeros
 from numpy.random import randn, normal
 from math import floor
 from ctypes import c_double
@@ -7,6 +11,7 @@ from StatTools.auxiliary import SharedBuffer
 from PIL import Image
 from random import gauss
 # from memory_profiler import profile
+from C_StatTools import fbm_core
 
 
 def add_h_values(vector: ndarray, k: int, h: float):
@@ -18,7 +23,7 @@ def quant_array(vector: ndarray, min_val: float, max_val: float):
 
 
 # @profile()
-def FBMotion(h: float, field_size: int):
+def fb_motion_python(h: float, field_size: int):
     """
     This is the algorithm. It need C version for sure.
     """
@@ -34,7 +39,7 @@ def FBMotion(h: float, field_size: int):
 
         fl = floor(n / m)
 
-        l1 = fl + 1 - 1
+        l1 = fl
         s = fl * 2
         l2 = floor((m - 1) * n / m) + 1
 
@@ -65,8 +70,54 @@ def FBMotion(h: float, field_size: int):
     return z
 
 
+# @profile
+def fb_motion(h: float, field_size: int, filter_mine: Optional[ndarray] = None) -> ndarray:
+    """
+    This is the same algorithm as FBMotion_python but with C compiled core.
+    In average you can get up to 10x performance boost using this version
+    over python one.
+
+    Basic usage:
+
+        result = FBMotion(1.5, 10)      # where H = 1.5 and field is 2^10+1
+
+        im = Image.fromarray(result)    # now you can save the image
+        im.save("filename.jpeg")
+
+    The result is quantized array (numpy.ndarray) that can be represented as image.
+
+    You can filter you own array:
+
+        my_arr = zeros((2**12 + 1, 2**12 + 1))          # size is supposed to be 2^N + 1
+        result = FBMotion(1.5, 12, filter_mine = my_arr)
+
+    """
+
+    if filter_mine is None:
+        n = 2 ** field_size + 1
+        zeros_arr = zeros((n, n), dtype=float)
+        fbm_core(zeros_arr, h, field_size)
+        return zeros_arr.astype(uint8)
+    else:
+        print("HERE")
+        shape = filter_mine.shape
+        if filter_mine.ndim == 1 or shape[0] != shape[1]:
+            raise ValueError("Cannot process such input array!")
+        if 2**field_size > shape[0]:
+            raise ValueError("2^degree > input array shape. You either use less or equal.")
+        fbm_core(filter_mine, h, field_size)
+        return filter_mine.astype(uint8)
+
+
 if __name__ == '__main__':
-    # r = FBMotion(1.6, 9)
+    # t1 = time.perf_counter()
+    # r = FBMotion_python(1.6, 10)
+    # print(f"Took: {time.perf_counter() - t1}")
     # im = Image.fromarray(r)
     # im.save("filename.jpeg")
-    pass
+
+    arr = fb_motion(0.5, 10)
+    im = Image.fromarray(arr)
+    im.save("filename.jpeg")
+
+    # some_func()
