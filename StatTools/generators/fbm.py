@@ -73,13 +73,13 @@ def fb_motion_python(h: float, field_size: int):
 # @profile
 def fb_motion(h: float, field_size: int, filter_mine: Optional[ndarray] = None) -> ndarray:
     """
-    This is the same algorithm as FBMotion_python but with C compiled core.
+    This is the same algorithm as fb_motion_python but with C compiled core.
     In average you can get up to 10x performance boost using this version
     over python one.
 
     Basic usage:
 
-        result = FBMotion(1.5, 10)      # where H = 1.5 and field is 2^10+1
+        result = fb_motion(1.5, 10)      # where H = 1.5 and field is 2^10+1
 
         im = Image.fromarray(result)    # now you can save the image
         im.save("filename.jpeg")
@@ -89,7 +89,7 @@ def fb_motion(h: float, field_size: int, filter_mine: Optional[ndarray] = None) 
     You can filter you own array:
 
         my_arr = zeros((2**12 + 1, 2**12 + 1))          # size is supposed to be 2^N + 1
-        result = FBMotion(1.5, 12, filter_mine = my_arr)
+        result = fb_motion(1.5, 12, filter_mine = my_arr)
 
     """
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     # im = Image.fromarray(r)
     # im.save("filename.jpeg")
 
-    arr = fb_motion(0.5, 10)
+    arr = fb_motion(0.5, 12)
     im = Image.fromarray(arr)
     im.save("filename.jpeg")
 

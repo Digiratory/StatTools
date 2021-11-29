@@ -12,6 +12,7 @@ from numpy.random import normal
 from tqdm import tqdm
 from StatTools.generators.base_filter import Filter
 from StatTools.auxiliary import SharedBuffer
+import gc
 
 
 def movmean(arr: ndarray, k):
@@ -22,13 +23,13 @@ def movmean(arr: ndarray, k):
 
 
 # @profile()
-def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float, pd: int, buffer_in_use: bool) -> \
-        Union[tuple, None]:
+def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float, pd: int, buffer_in_use: bool,
+                 gc_params:tuple = None) -> Union[tuple, None]:
     """
     Core of DPCAA algorithm. Takes bunch of S-values and returns 3 3d-matrices: first index
     represents S value.
     """
-
+    gc.set_threshold(10, 2, 2)
     s_current = [s] if not isinstance(s, Iterable) else s
 
     cumsum_arr = SharedBuffer.get("ARR") if buffer_in_use else cumsum(arr, axis=1)
@@ -45,9 +46,9 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
         Xw = arange(s_val, dtype=int)
         Y = zeros((shape[0], len(V)), dtype=object)
 
-        for n, vector in enumerate(cumsum_arr):
+        for n in range(cumsum_arr.shape[0]):
             for v_i, v in enumerate(V):
-                W = vector[v:v + s_val]
+                W = cumsum_arr[n][v:v + s_val]
                 if len(W) == 0:
                     print(f"\tFor s = {s_val} W is an empty slice!")
                     return P, R, F
@@ -55,6 +56,12 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
                 p = polyfit(Xw, W, deg=pd)
                 Z = polyval(p, Xw)
                 Y[n][v_i] = Z - W
+
+                if gc_params is not None:
+                    if n % gc_params[0] == 0:
+                        gc.collect(gc_params[1])
+
+                # loop_func(cumsum_arr, n, v, v_i, s_val, Xw, pd, Y)
 
         Y = array([concatenate(Y[i]) for i in range(Y.shape[0])])
 
@@ -73,25 +80,30 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
         for n in range(shape[0]):
             for m in range(n + 1):
                 if Cinv[n][n] * Cinv[m][m] < 0:
-                    raise ValueError("Inverted matrix has negative values!")
+                    print(f"S = {s_val} | Error: Sqrt(-1)! No P array values for this S!")
+                    break
 
                 P[s_i][n][m] = -Cinv[n][m] / sqrt(Cinv[n][n] * Cinv[m][m])
                 P[s_i][m][n] = P[s_i][n][m]
+            else:
+                continue
+            break
 
     return P, R, F
 
 
-def start_pool_with_buffer(buffer: SharedBuffer, processes: int, s_by_workers: ndarray, pd: int, step: float):
+def start_pool_with_buffer(buffer: SharedBuffer, processes: int, s_by_workers: ndarray, pd: int, step: float, gc_params:tuple = None):
     buffer.apply_in_place(cumsum, by_1st_dim=True)
 
     with closing(Pool(processes=processes, initializer=buffer.buffer_init, initargs=({"ARR": buffer},))) as pool:
-        pool_result = pool.map(partial(dpcca_worker, arr=None, pd=pd, step=step, buffer_in_use=True), s_by_workers)
+        pool_result = pool.map(partial(dpcca_worker, arr=None, pd=pd, step=step, buffer_in_use=True, gc_params=gc_params),
+                               s_by_workers)
 
     return pool_result
 
 
 def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int=1,
-          buffer: Union[bool, SharedBuffer] = False) -> tuple:
+          buffer: Union[bool, SharedBuffer] = False, gc_params:tuple = None) -> tuple:
     """
     Detrended Partial-Cross-Correlation Analysis : https://www.nature.com/articles/srep08143
 
@@ -132,7 +144,7 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
         raise ValueError("Cannot use S > L / 4")
 
     if processes == 1 or len(s) == 1:
-        p, r, f = dpcca_worker(s, arr, step, pd, buffer_in_use=False)
+        p, r, f = dpcca_worker(s, arr, step, pd, buffer_in_use=False, gc_params=gc_params)
         if concatenate_all:
             P = concatenate(p, axis=1)[0]
             R = concatenate(r, axis=1)[0]
@@ -153,15 +165,15 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
             shared_input = SharedBuffer(arr.shape, c_double)
             shared_input.write(arr)
 
-            pool_result = start_pool_with_buffer(shared_input, processes, S_by_workers, pd, step)
+            pool_result = start_pool_with_buffer(shared_input, processes, S_by_workers, pd, step, gc_params)
 
         else:
             with closing(Pool(processes=processes)) as pool:
-                pool_result = pool.map(partial(dpcca_worker, arr=arr, pd=pd, step=step, buffer_in_use=False),
-                                       S_by_workers)
+                pool_result = pool.map(partial(dpcca_worker, arr=arr, pd=pd, step=step, buffer_in_use=False,
+                                               gc_params=gc_params), S_by_workers)
 
     elif isinstance(buffer, SharedBuffer):
-        pool_result = start_pool_with_buffer(buffer, processes, S_by_workers, pd, step)
+        pool_result = start_pool_with_buffer(buffer, processes, S_by_workers, pd, step, gc_params)
     else:
         raise ValueError("Wrong type of input buffer!")
 
@@ -223,6 +235,6 @@ if __name__ == '__main__':
     #
     #     print(h, coefs)
 
-    pass
-
+    x = normal(0, 1, (2**10, 2**10))
+    dpcca(x, 2, 0.5, [2**i for  i in range(3, 15)], processes=12)
 

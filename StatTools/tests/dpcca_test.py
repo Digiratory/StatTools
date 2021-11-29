@@ -1,10 +1,18 @@
+import ctypes
+import time
+
+from memory_profiler import profile
+from numpy.random import normal
+from pympler import asizeof
 from StatTools.analysis.dpcca import dpcca, movmean
 from StatTools.generators.base_filter import Filter
-from matplotlib.pyplot import loglog, legend, show
+from matplotlib.pyplot import loglog, legend, show, title
+from StatTools.auxiliary import SharedBuffer
+import gc
 
 
-if __name__ == '__main__':
 
+def run_to_compare_with_matlab():
     h = 1.5
     length = 2 ** 20
     s = [2 ** i for i in range(3, 20)]
@@ -23,3 +31,43 @@ if __name__ == '__main__':
         loglog(s2, f2, label=f"Movmean(k={k})")
     legend()
     show()
+
+# @profile
+def run_to_test_buffer():
+
+    shape = 2**12, 2**11
+
+    buffer = SharedBuffer(shape, ctypes.c_double)
+
+    ref = buffer.to_array()
+    print(f"Initial size: {8 * shape[0] * shape[1] // 1024 // 1024}")
+
+    for v in ref:
+        # v[:] = Filter(1.5, shape[1]).generate()
+        v[:] = normal(0, 1, shape[1])
+
+    print("Assignment is done!")
+    s = [2**i for i in range(5, 15)]
+
+    t1 = time.perf_counter()
+    # fastest:
+    # p, r, f, s_out = dpcca(normal(0, 1, shape), 2, 0.5, s, processes=12, gc_params=None, buffer=False)
+    # cheapest:
+    p, r, f, s_out = dpcca(ref, 2, 0.5, s, processes=12, gc_params=(2, 2), buffer=False)
+
+    print(f"Took : {time.perf_counter() - t1}")
+
+    vector_to_check = shape[0] // 2
+
+    f_s = [f[s_i][vector_to_check][vector_to_check] for s_i in range(len(s_out))]
+
+    loglog(s_out, f_s)
+    title(f"F(s) for {vector_to_check} vector")
+    show()
+
+
+if __name__ == '__main__':
+
+    # run_to_compare_with_matlab()
+    run_to_test_buffer()
+    # print(gc.get_threshold())

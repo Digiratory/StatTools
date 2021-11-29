@@ -1,21 +1,27 @@
+import time
 from contextlib import closing
 from functools import partial
 from multiprocessing import Pool, Array, cpu_count, Process, freeze_support
-from numpy import array, frombuffer, copyto, sort, mean
+
+from memory_profiler import profile
+from numpy import array, frombuffer, copyto, sort, mean, ndarray
 from numpy.random import normal
 from ctypes import c_double
 from numpy.random import normal
+from pympler import asizeof
+from StatTools.auxiliary import SharedBuffer
 
-def worker(i, shape):
-    print(f"Process {i + 1} started . . .")
 
+def worker(i, shape, arr=None):
+    print(f"\tProcess {i + 1} started . . .")
+
+    arr = SharedBuffer.get('ARR') if arr is None else arr
     s = 0
     for v in range(shape[0]):
         # v = normal(0, 1, 10**4)
         # s += mean(v)
-        s += mean(sort(frombuffer(SHARED_ARR.get_obj(), dtype=c_double, offset=v * shape[0], count=shape[1])))
+        s += mean(arr[v])
 
-    print(f"S = {s}")
     return s
 
 
@@ -24,7 +30,7 @@ def init(arr):
     SHARED_ARR = arr
 
 
-def run_test():
+def run_test_with_buffer(shape: tuple, processes:int):
     """
         Shared memory test. Generates some large array and share it between
         processes. Uses pymbler to track object in the main scope. Checks
@@ -37,26 +43,72 @@ def run_test():
 
         """
 
-    shape = (3 * 10 ** 4, 10 ** 4)  # array shape
-    processes = cpu_count()  # size of the pool
-
     x = normal(0, 1, shape)
-    print(f"X[0][0] = {x[0][0]}, X[0][-1] = {x[0][-1]}")
-    print(f"Input array to share has size : {asizeof.asizeof(x) / 1024 / 1024 // 1} Mb")
 
-    shared_wrapper = Array(c_double, shape[0] * shape[1], lock=True)
-    copyto(frombuffer(shared_wrapper.get_obj(), dtype=c_double).reshape(shape), x)
+    print("Started buffer test . . .")
+    shared_array = SharedBuffer(shape, c_double)
+    shared_array.write(x)
 
-    with closing(Pool(processes=processes, initializer=init, initargs=(shared_wrapper,))) as pool:
+    with closing(Pool(processes=processes, initializer=shared_array.buffer_init, initargs=({'ARR': shared_array}, ))) \
+            as pool:
         result = pool.map(partial(worker, shape=shape), range(processes))
 
-    print("\nMain Python process summary:")
-    print(tr.print_diff())
+    print("Buffer test is done!")
+
+
+def run_test_raw_passing(shape:tuple, processes:int):
+
+    x = normal(0, 1, shape)
+    print("Starting raw passing test  . . .")
+
+    with closing(Pool(processes=processes)) as pool:
+        result = pool.map(partial(worker, shape=shape, arr=x), range(processes))
+
+    print("Raw test is done!")
+
+@profile
+def test_reallocating(shape:tuple):
+    x = normal(0, 1, shape)
+
+    time.sleep(5)
+    shared_arr = SharedBuffer(shape, c_double)
+    shared_arr.write(x)
+    time.sleep(3)
+
+    print(f"Initial arr size: {asizeof.asizeof(x) //1024 //1024} Mb")
+
+
+@profile
+def test_reference(shape:tuple):
+
+    buffer = SharedBuffer(shape, c_double)
+    print(f"Buffer last elements: {buffer[-1, -6:-1]}")
+    time.sleep(2)
+    ref = buffer.to_array()
+
+    for v in ref:
+        v[:] = normal(0, 1, shape[1])
+
+    print(f"Buffer last elements after populating with values: {buffer[-1, -6:-1]}")
+    time.sleep(5)
+
+    print("Test is done")
+
 
 
 if __name__ == '__main__':
     """
-    Run from the console :  mprof run -M python memory_test.py
+    Run from the console :  mprof run -M python test_buffer.py
                             mprof plot
     """
-    run_test()
+
+    shape = (3 * 10 ** 4, 10 ** 4)  # array shape
+    processes = 12
+
+    # run_test_with_buffer(shape, processes)
+    # time.sleep(5)
+    # run_test_raw_passing(shape, processes)
+    # time.sleep(5)
+    # test_reallocating(shape)
+
+    test_reference(shape)
