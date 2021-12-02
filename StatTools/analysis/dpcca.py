@@ -9,25 +9,13 @@ from numpy.linalg import inv
 from typing import Union
 from contextlib import closing
 from numpy.random import normal
-from tqdm import tqdm
-import timeit
-
-from StatTools.analysis.dfa import DFA
-from StatTools.generators.base_filter import Filter
 from StatTools.auxiliary import SharedBuffer
 import gc
 
 
-def movmean(arr: ndarray, k):
-    conv = convolve(arr, ones((k, ))/k, mode='valid')
-    conv = insert(conv, 0, mean(arr[0:2]))
-    conv = append(conv, mean(arr[-2:]))
-    return conv
-
-
 # @profile()
 def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float, pd: int, buffer_in_use: bool,
-                 gc_params:tuple = None) -> Union[tuple, None]:
+                 gc_params: tuple = None, short_vectors=False) -> Union[tuple, None]:
     """
     Core of DPCAA algorithm. Takes bunch of S-values and returns 3 3d-matrices: first index
     represents S value.
@@ -95,18 +83,27 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
     return P, R, F
 
 
-def start_pool_with_buffer(buffer: SharedBuffer, processes: int, s_by_workers: ndarray, pd: int, step: float, gc_params:tuple = None):
+def start_pool_with_buffer(buffer: SharedBuffer, processes: int, s_by_workers: ndarray, pd: int, step: float,
+                           gc_params: tuple = None):
     buffer.apply_in_place(cumsum, by_1st_dim=True)
 
     with closing(Pool(processes=processes, initializer=buffer.buffer_init, initargs=({"ARR": buffer},))) as pool:
-        pool_result = pool.map(partial(dpcca_worker, arr=None, pd=pd, step=step, buffer_in_use=True, gc_params=gc_params),
-                               s_by_workers)
+        pool_result = pool.map(
+            partial(dpcca_worker, arr=None, pd=pd, step=step, buffer_in_use=True, gc_params=gc_params),
+            s_by_workers)
 
     return pool_result
 
 
-def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int=1,
-          buffer: Union[bool, SharedBuffer] = False, gc_params:tuple = None) -> tuple:
+def concatenate_3d_matrices(p: ndarray, r: ndarray, f: ndarray):
+    P = concatenate(p, axis=1)[0]
+    R = concatenate(r, axis=1)[0]
+    F = concatenate(f, axis=1)[0]
+    return P, R, F
+
+
+def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int = 1,
+          buffer: Union[bool, SharedBuffer] = False, gc_params: tuple = None, short_vectors=False) -> tuple:
     """
     Detrended Partial-Cross-Correlation Analysis : https://www.nature.com/articles/srep08143
 
@@ -127,8 +124,10 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
             fluct_func = [F[s][0][0] for s in s_vals]
 
     """
+    if short_vectors:
+        return dpcca_worker(s, arr, step, pd, buffer_in_use=False, gc_params=gc_params, short_vectors=True)
 
-    concatenate_all = False         # concatenate if 1d array , no need to use 3d P, R, F
+    concatenate_all = False  # concatenate if 1d array , no need to use 3d P, R, F
     if arr.ndim == 1:
         arr = array([arr])
         concatenate_all = True
@@ -143,25 +142,22 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
         if len(s) != init_s_len:
             print(f"\tDPCAA warning: only following S values are in use: {s}")
 
-    elif s > arr.shape[1] / 4:
-        raise ValueError("Cannot use S > L / 4")
+    elif isinstance(s, (float, int)):
+        if s > arr.shape[1] / 4:
+            raise ValueError("Cannot use S > L / 4")
+        s = (s,)
 
     if processes == 1 or len(s) == 1:
         p, r, f = dpcca_worker(s, arr, step, pd, buffer_in_use=False, gc_params=gc_params)
         if concatenate_all:
-            P = concatenate(p, axis=1)[0]
-            R = concatenate(r, axis=1)[0]
-            F = concatenate(f, axis=1)[0]
-            return P, R, F, s
+            return concatenate_3d_matrices(p, r, f) + s
+
         return p, r, f, s
-    else:
-        if processes > len(s):
-            processes = len(s)
+
+    processes = len(s) if processes > len(s) else processes
 
     S = array(s, dtype=int) if not isinstance(s, ndarray) else s
     S_by_workers = array_split(S, processes)
-
-    P, R, F = array([]), array([]), array([])
 
     if isinstance(buffer, bool):
         if buffer:
@@ -180,18 +176,17 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
     else:
         raise ValueError("Wrong type of input buffer!")
 
+    P, R, F = array([]), array([]), array([])
+
     for res in pool_result:
         P = res[0] if P.size < 1 else vstack((P, res[0]))
         R = res[1] if R.size < 1 else vstack((R, res[1]))
         F = res[2] if F.size < 1 else vstack((F, res[2]))
 
     if concatenate_all:
-        P = concatenate(P, axis=1)[0]
-        R = concatenate(R, axis=1)[0]
-        F = concatenate(F, axis=1)[0]
+        return concatenate_3d_matrices(P, R, F) + (s,)
 
     return P, R, F, s
-
 
 
 if __name__ == '__main__':
@@ -238,6 +233,6 @@ if __name__ == '__main__':
     #
     #     print(h, coefs)
 
-    x = normal(0, 1, (2**10, 2**10))
-    dpcca(x, 2, 0.5, [2**i for  i in range(3, 15)], processes=12)
-
+    x = normal(0, 1, 2 ** 10)
+    p, r, f, s = dpcca(x, 2, 0.5, [2 ** i for i in range(3, 10)], processes=12, buffer=True)
+    print(f, s)
