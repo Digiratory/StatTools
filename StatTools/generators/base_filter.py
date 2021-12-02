@@ -97,17 +97,19 @@ class Filter:
         :return: vector that has
         """
 
-        full_spec = abs(rfft(vector))
+        full_spec = abs(rfft(vector))[:-1]
         phase_spec = angle(full_spec)
 
         self.spec = full_spec
         self.angle = phase_spec
 
-        output = zeros(self.total_length, dtype=complex)
+        output = zeros(len(full_spec), dtype=complex)
 
-        for spec_val, phase_val, beta, n in zip(full_spec, phase_spec, self.beta_coefficients,
-                                                range(self.total_length)):
-            output[n] = spec_val * beta * exp(phase_val * 1j)
+        # for spec_val, phase_val, beta, n in zip(full_spec, phase_spec, self.beta_coefficients,
+        #                                         range(self.total_length)):
+        #     output[n] = spec_val * beta * exp(phase_val * 1j)
+
+        output = full_spec * self.beta_coefficients * exp(phase_spec * 1j)
 
         self.output = output
         reversed_fft = irfft(output, n=self.length * 3)

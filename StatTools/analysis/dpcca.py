@@ -10,6 +10,9 @@ from typing import Union
 from contextlib import closing
 from numpy.random import normal
 from tqdm import tqdm
+import timeit
+
+from StatTools.analysis.dfa import DFA
 from StatTools.generators.base_filter import Filter
 from StatTools.auxiliary import SharedBuffer
 import gc
