@@ -1,12 +1,14 @@
 import operator
 import time
-from multiprocessing import Value, Lock, Array
+from contextlib import closing
+from multiprocessing import Value, Lock, Array, cpu_count, Pool
 from threading import Thread
 from numpy import ndarray, array, frombuffer, copyto, s_
 from typing import Union
 from ctypes import c_double, c_int64
-from functools import reduce
+from functools import reduce, partial
 from operator import mul
+import numpy
 
 
 class SharedBuffer:
@@ -151,6 +153,171 @@ class SharedBuffer:
     @classmethod
     def get(cls, name):
         return globals()[name]
+
+
+
+class PearsonParallel:
+
+    """
+
+        КОД СТАРЫЙ, НЕ РЕФАКТОРИЛ!
+
+
+    """
+
+
+
+
+    def __init__(self, input_array):
+
+        if isinstance(input_array, str):
+            try:
+                input_array = numpy.loadtxt(input_array)
+            except OSError:
+                error_str = "\n    The file either doesn't exit or you use a wrong path!"
+                raise NameError(error_str)
+
+        if isinstance(input_array, list):
+            try:
+                input_array = numpy.array(input_array)
+            except numpy.VisibleDeprecationWarning:
+                error_str = "\n    Error occurred when converting list to numpy array! " \
+                            "\n    List probably has different dimensions!"
+                raise NameError(error_str)
+
+        if input_array.ndim == 1:
+            error_str = "\n    PearsonParallel got 1-dimensional array !"
+            raise NameError(error_str)
+
+        if numpy.size(input_array) < pow(10, 5):
+            print("\n    PearsonParallel Warning: Working in parallel mode with such small arrays is not effective !")
+
+        self.arr = input_array
+
+        if len(input_array) > 2:
+            self.triangle_result = self.triangle_divider(len(input_array))
+            self.working_ranges = self.triangle_result[0]
+            self.cells_to_count = self.triangle_result[1]
+            self.quantity = self.arr.shape[0]
+            self.length = self.arr.shape[1]
+
+    def create_matrix(self, threads=cpu_count(), progress_bar=False):
+
+        if threads < 1:
+            error_str = "\n    PearsonParallel Error: There is no point of calling this method using less than 2 " \
+                        "threads since for loop is going to be faster!"
+            raise NameError(error_str)
+
+        if len(self.arr) == 2:
+            return numpy.corrcoef(self.arr[0], self.arr[1])[0][1]
+
+        shared_array = Array(c_double, self.quantity * self.length, lock=True)
+        numpy.copyto(numpy.frombuffer(shared_array.get_obj()).reshape(self.arr.shape), self.arr)
+        del self.arr
+
+        result_matrix = Array(c_double, self.quantity * self.quantity, lock=True)
+
+        bar_counter = Value('i', 0)
+        bar_lock = Lock()
+
+
+
+        with closing(Pool(processes=threads, initializer=self.global_initializer, initargs=(shared_array,
+                                                                                            bar_counter,
+                                                                                            bar_lock,
+                                                                                            result_matrix))) as pool:
+            pool.map(partial(self.corr_matrix, quantity=self.quantity, length=self.length), self.working_ranges)
+
+        ans = numpy.frombuffer((result_matrix.get_obj())).reshape((self.quantity, self.quantity))
+        for i, j in zip(range(len(ans)), range(len(ans))):
+            ans[i][j] = 1.0
+        return ans
+
+    @staticmethod
+    def triangle_divider(field_size):
+        cpu_available = cpu_count()
+        cells_to_count = (field_size * field_size - field_size) / 2
+
+        cycle = int(cells_to_count / cpu_available)
+
+        cells = []
+        start = [0, 0]
+        on_interval = 0
+
+        for r1 in range(field_size):
+            for r2 in range(field_size):
+
+                if r1 >= r2:
+                    continue
+                else:
+
+                    if on_interval <= cycle:
+                        on_interval += 1
+                    else:
+                        cells.append([start, [r1, r2]])
+                        start = [r1, r2]
+                        on_interval = 0
+
+        cells.append([cells[-1][1], [field_size - 1, field_size - 1]])
+
+        return [cells, cells_to_count]
+
+    @staticmethod
+    def global_initializer(arr, bar_val, bar_lock, result_arr):
+        global shared_array
+        global counter
+        global lock
+        global matrix
+
+        shared_array = arr
+        counter = bar_val
+        lock = bar_lock
+        matrix = result_arr
+
+    @staticmethod
+    def corr_matrix(working_range, quantity, length):
+        def get_row(index):
+            return numpy.frombuffer(shared_array.get_obj()).reshape((quantity, length))[index]
+
+        def write_to_matrix(value, r1, r2):
+            numpy.frombuffer(matrix.get_obj()).reshape((quantity, quantity))[r1][r2] = value
+
+        start = working_range[0]
+        stop = working_range[1]
+
+        iterations_buffer = 0
+
+        for r1 in range(start[0], stop[0] + 1):
+
+            if r1 == stop[0]:
+                r2_stop = stop[1]
+            else:
+                r2_stop = quantity
+
+            if r1 == start[0]:
+                r2_start = start[1]
+            else:
+                r2_start = r1 + 1
+
+            for r2 in range(r2_start, r2_stop):
+
+                if r1 > r2:
+                    continue
+                else:
+                    corr_value = numpy.corrcoef(get_row(r1), get_row(r2))[0][1]
+                    write_to_matrix(corr_value, r1, r2)
+                    write_to_matrix(corr_value, r2, r1)
+
+                    iterations_buffer += 1
+
+                    if iterations_buffer >= 250:
+                        with lock:
+                            counter.value += iterations_buffer
+                            iterations_buffer = 0
+
+        with lock:
+            counter.value += iterations_buffer
+
 
 class CheckNumpy:
 

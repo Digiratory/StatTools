@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 from StatTools.analysis.dfa import DFA
 from StatTools.generators.base_filter import FilteredArray
-from numpy import full, matmul, mean
+from numpy import full, matmul, mean, ndarray
 from numpy.linalg import cholesky
 import pandas as pd
 
@@ -61,7 +61,7 @@ class CorrelatedArray:
 
         self.set_mean, self.set_std, self.threads = set_mean, set_std, threads
 
-    def create(self, corr_target: Union[float, Iterable], h_control=False) -> pd.DataFrame:
+    def create(self, corr_target: Union[float, Iterable, ndarray], h_control=False) -> pd.DataFrame:
         """
         Main method.
         1. For each input corr coefficient I create Rxx matrix which consist of
@@ -82,9 +82,12 @@ class CorrelatedArray:
         for corr in self.corr_target:
             indices = [corr for i in range(self.quantity)]
 
-            Rxx = full((self.quantity, self.quantity), corr, dtype=float)
-            for i, j in zip(range(self.quantity), range(self.quantity)):
-                Rxx[i][j] = 1
+            if isinstance(self.corr_target, ndarray):
+                Rxx = self.corr_target
+            else:
+                Rxx = full((self.quantity, self.quantity), corr, dtype=float)
+                for i, j in zip(range(self.quantity), range(self.quantity)):
+                    Rxx[i][j] = 1
 
             chol_transform_matrix = cholesky(Rxx)
             correlated_vectors = pd.DataFrame(matmul(chol_transform_matrix, self.dataset), index=indices)
@@ -96,6 +99,9 @@ class CorrelatedArray:
                     h_estimated = DFA(correlated_vectors.to_numpy()).find_h()
 
                 correlated_vectors.insert(0, 'H_est', h_estimated)
+
+            if isinstance(self.corr_target, ndarray):
+                return correlated_vectors
 
             result = correlated_vectors if result.size == 0 else result.append(correlated_vectors)
 
@@ -110,4 +116,3 @@ if __name__ == '__main__':
 
     x = CorrelatedArray(data=d, threads=1).create(0.7, h_control=True).to_numpy()
 
-    print(mean(c))
