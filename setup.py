@@ -9,7 +9,7 @@ module = Extension('C_StatTools',
 
 setup(
     name="StatTools",
-    version="1.2.2",
+    version="1.5.1",
     ext_modules=[module],
     author="Alexandr Kuzmenko",
     author_email="alexander.k.spb@gmail.com",
