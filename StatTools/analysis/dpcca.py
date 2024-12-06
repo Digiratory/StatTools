@@ -163,7 +163,7 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
     if processes == 1 or len(s) == 1:
         p, r, f = dpcca_worker(s, arr, step, pd, buffer_in_use=False, gc_params=gc_params, n_integral=n_integral)
         if concatenate_all:
-            return concatenate_3d_matrices(p, r, f) + s
+            return concatenate_3d_matrices(p, r, f) + (s,)
 
         return p, r, f, s
 
