@@ -64,7 +64,7 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
 
         for n in range(shape[0]):
             for m in range(n + 1):
-                F[s_i][n][m] = mean(Y[n] * Y[m]) / (s_val - 1)
+                F[s_i][n][m] = mean(Y[n] * Y[m]) #/ (s_val - 1)
                 F[s_i][m][n] = F[s_i][n][m]
 
         for n in range(shape[0]):
