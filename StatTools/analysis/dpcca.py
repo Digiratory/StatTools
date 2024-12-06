@@ -15,7 +15,7 @@ import gc
 
 # @profile()
 def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float, pd: int, buffer_in_use: bool,
-                 gc_params: tuple = None, short_vectors=False) -> Union[tuple, None]:
+                 gc_params: tuple = None, short_vectors=False, n_integral=1) -> Union[tuple, None]:
     """
     Core of DPCAA algorithm. Takes bunch of S-values and returns 3 3d-matrices: first index
     represents S value.
@@ -23,7 +23,13 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
     gc.set_threshold(10, 2, 2)
     s_current = [s] if not isinstance(s, Iterable) else s
 
-    cumsum_arr = SharedBuffer.get("ARR") if buffer_in_use else cumsum(arr, axis=1)
+    
+    if buffer_in_use:
+        cumsum_arr = SharedBuffer.get("ARR") 
+    else:
+        cumsum_arr = arr
+        for _ in range(n_integral):
+            cumsum_arr = cumsum(cumsum_arr, axis=1)
 
     shape = cumsum_arr.shape if buffer_in_use else arr.shape
 
@@ -58,7 +64,7 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
 
         for n in range(shape[0]):
             for m in range(n + 1):
-                F[s_i][n][m] = mean(Y[n] * Y[m]) / (s_val - 1)
+                F[s_i][n][m] = mean(Y[n] * Y[m]) #/ (s_val - 1)
                 F[s_i][m][n] = F[s_i][n][m]
 
         for n in range(shape[0]):
@@ -84,8 +90,10 @@ def dpcca_worker(s: Union[int, Iterable], arr: Union[ndarray, None], step: float
 
 
 def start_pool_with_buffer(buffer: SharedBuffer, processes: int, s_by_workers: ndarray, pd: int, step: float,
-                           gc_params: tuple = None):
-    buffer.apply_in_place(cumsum, by_1st_dim=True)
+                           gc_params: tuple = None, n_integral=1):
+
+    for _ in range(n_integral):
+        buffer.apply_in_place(cumsum, by_1st_dim=True)
 
     with closing(Pool(processes=processes, initializer=buffer.buffer_init, initargs=({"ARR": buffer},))) as pool:
         pool_result = pool.map(
@@ -103,7 +111,7 @@ def concatenate_3d_matrices(p: ndarray, r: ndarray, f: ndarray):
 
 
 def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes: int = 1,
-          buffer: Union[bool, SharedBuffer] = False, gc_params: tuple = None, short_vectors=False) -> tuple:
+          buffer: Union[bool, SharedBuffer] = False, gc_params: tuple = None, short_vectors=False, n_integral=1) -> tuple:
     """
     Detrended Partial-Cross-Correlation Analysis : https://www.nature.com/articles/srep08143
 
@@ -116,6 +124,11 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
 
     Returns 3 3-d matrices where first dimension represents given S-value.
 
+    P, 
+    R, 
+    F — F^2
+    s — Used scales
+
     Basic usage:
         You can get whole F(s) function for first vector as:
 
@@ -125,7 +138,7 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
 
     """
     if short_vectors:
-        return dpcca_worker(s, arr, step, pd, buffer_in_use=False, gc_params=gc_params, short_vectors=True)
+        return dpcca_worker(s, arr, step, pd, buffer_in_use=False, gc_params=gc_params, short_vectors=True, n_integral=n_integral)
 
     concatenate_all = False  # concatenate if 1d array , no need to use 3d P, R, F
     if arr.ndim == 1:
@@ -148,9 +161,9 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
         s = (s,)
 
     if processes == 1 or len(s) == 1:
-        p, r, f = dpcca_worker(s, arr, step, pd, buffer_in_use=False, gc_params=gc_params)
+        p, r, f = dpcca_worker(s, arr, step, pd, buffer_in_use=False, gc_params=gc_params, n_integral=n_integral)
         if concatenate_all:
-            return concatenate_3d_matrices(p, r, f) + s
+            return concatenate_3d_matrices(p, r, f) + (s,)
 
         return p, r, f, s
 
@@ -164,15 +177,15 @@ def dpcca(arr: ndarray, pd: int, step: float, s: Union[int, Iterable], processes
             shared_input = SharedBuffer(arr.shape, c_double)
             shared_input.write(arr)
 
-            pool_result = start_pool_with_buffer(shared_input, processes, S_by_workers, pd, step, gc_params)
+            pool_result = start_pool_with_buffer(shared_input, processes, S_by_workers, pd, step, gc_params, n_integral=n_integral)
 
         else:
             with closing(Pool(processes=processes)) as pool:
                 pool_result = pool.map(partial(dpcca_worker, arr=arr, pd=pd, step=step, buffer_in_use=False,
-                                               gc_params=gc_params), S_by_workers)
+                                               gc_params=gc_params, n_integral=n_integral), S_by_workers)
 
     elif isinstance(buffer, SharedBuffer):
-        pool_result = start_pool_with_buffer(buffer, processes, S_by_workers, pd, step, gc_params)
+        pool_result = start_pool_with_buffer(buffer, processes, S_by_workers, pd, step, gc_params, n_integral=n_integral)
     else:
         raise ValueError("Wrong type of input buffer!")
 
