@@ -1,6 +1,6 @@
 # 1.6.1
 
-* feat: add conventional FA
+* [PR-3](https://github.com/Digiratory/StatTools/pull/3) feat: add conventional FA
 
 # 1.6.0
 
