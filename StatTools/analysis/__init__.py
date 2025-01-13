@@ -1,2 +1,2 @@
-if __name__ == '__main__':
-    pass
+from .fa import fa
+from .dpcca import dpcca
