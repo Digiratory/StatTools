@@ -1,3 +1,7 @@
+# 1.6.1
+
+* feat: add conventional FA
+
 # 1.6.0
 
 * [GH-1](https://github.com/Digiratory/StatTools/issues/1) Add argument `n_integral=1` in `StatTools.analysis.dpcca.dpcca` to provide possibility to control integretion in the beggining of the dpcca(dfa) analysis pipeline.
