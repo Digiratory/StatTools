@@ -1,10 +1,15 @@
 name: Create Release
 
-on:
-  workflow_run:
-    workflows: ['Run Tests on Tag']
+# on:
+#   workflow_run:
+#     workflows: ['Run Tests on Tag']
     # types:
     #   - completed
+
+on:
+  push:
+    tags:
+      - 'release.*.*.*'
 
 jobs:
   create-release:
