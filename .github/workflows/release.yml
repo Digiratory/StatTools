@@ -1,0 +1,41 @@
+name: Create Release on Success
+
+on:
+  workflow_run:
+    workflows: ['Run Tests on Tag']
+    types:
+      - completed
+
+jobs:
+  create-release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get tag name
+        id: get-tag
+        run: |
+          TAG=$(git describe --tags --abbrev=0)
+          echo "Tag: $TAG"
+          echo "::set-output name=tag::$TAG"
+
+      - name: Validate tag format
+        id: validate-tag
+        run: |
+          if [[ ! ${{ steps.get-tag.outputs.tag }} =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag ${{ steps.get-tag.outputs.tag }} does not match the format release-X.Y.Z"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.get-tag.outputs.tag }}
+          release_name: Release ${{ steps.get-tag.outputs.tag }}
+          body: |
+            This release was created based on the tag **${{ steps.get-tag.outputs.tag }}**.
+          draft: false
+          prerelease: false

@@ -1,12 +1,9 @@
-name: Run Tests
+name: Run Tests on Tag
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    tags:
+      - '*'
 
 jobs:
   test:
