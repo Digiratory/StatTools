@@ -3,7 +3,7 @@ name: Run Tests on Tag
 on:
   push:
     tags:
-      - '*'
+      - 'Release-[0-9]*.[0-9]*.[0-9]'
 
 jobs:
   test:
