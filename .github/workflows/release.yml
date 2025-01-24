@@ -3,8 +3,8 @@ name: Create Release
 on:
   workflow_run:
     workflows: ['Run Tests on Tag']
-    types:
-      - completed
+    # types:
+    #   - completed
 
 jobs:
   create-release:
