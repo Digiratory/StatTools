@@ -1,4 +1,4 @@
-name: Create Release on Success
+name: Create Release
 
 on:
   workflow_run:
@@ -8,8 +8,8 @@ on:
 
 jobs:
   create-release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
