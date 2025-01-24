@@ -12,6 +12,7 @@ testdata = [
     (0.95),
 ]
 
+
 @pytest.fixture(scope="module")
 def sample_signal():
     """ Generate sample signal using Kasdin method
@@ -42,13 +43,13 @@ def sample_signal():
 def test_fa_default_gaussian_noise():
     s = [2 ** i for i in range(3, 20)]
     step = 0.01
-    length = 2 ** 15
+    length = 2 ** 16
     sig = np.random.standard_normal(length)
 
     f1, s1 = fa(sig, step, s, n_integral=1)
     f1 = np.sqrt(f1)
 
-    res =stats.linregress(np.log(s1), np.log(f1)).slope
+    res = stats.linregress(np.log(s1), np.log(f1)).slope
 
     # plt.loglog(s1, np.sqrt(f1))
     # plt.grid()
@@ -58,12 +59,13 @@ def test_fa_default_gaussian_noise():
     f1, s1 = fa(sig, step, s, n_integral=2)
     f1 = np.sqrt(f1)
 
-    res =stats.linregress(np.log(s1), np.log(f1)).slope
+    res = stats.linregress(np.log(s1), np.log(f1)).slope
 
     # plt.loglog(s1, np.sqrt(f1))
     # plt.grid()
     # plt.show()
     assert res == pytest.approx(1.0, 0.15)
+
 
 @pytest.mark.parametrize("h", testdata)
 def test_fa_default(sample_signal, h):
@@ -74,12 +76,13 @@ def test_fa_default(sample_signal, h):
     f1, s1 = fa(sig, step, s)
     f1 = np.sqrt(f1)
 
-    res =stats.linregress(np.log(s1), np.log(f1)).slope
+    res = stats.linregress(np.log(s1), np.log(f1)).slope
 
     # plt.loglog(s1, np.sqrt(f1))
     # plt.grid()
     # plt.show()
     assert res == pytest.approx(h, 0.2)
+
 
 @pytest.mark.parametrize("h", testdata)
 def test_fa_default_multiple_signals(sample_signal, h):
@@ -93,7 +96,7 @@ def test_fa_default_multiple_signals(sample_signal, h):
     res = []
     for f in f1:
         res.append(stats.linregress(np.log(s1), np.log(f)).slope)
-    res =  np.array(res)
+    res = np.array(res)
     # plt.loglog(s1, np.sqrt(f1))
     # plt.grid()
     # plt.show()
