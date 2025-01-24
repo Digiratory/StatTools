@@ -1,5 +1,5 @@
 memory-profiler==0.58.0
-numpy==1.21.4
+numpy==1.26.4
 psutil==5.8.0
 Pympler==0.9
 scipy==1.13.1
