@@ -9,7 +9,7 @@ name: Create Release
 on:
   push:
     tags:
-      - 'release.*.*.*'
+      - '*'
 
 jobs:
   create-release:
