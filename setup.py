@@ -7,6 +7,9 @@ module = Extension('C_StatTools',
     sources=['StatTools_C_API.cpp'],
     language='c++')
 
+with open('requirements.txt') as f:
+    requirements = f.read.splitlines()
+
 setup(
     name="StatTools",
     version="1.6.0",
@@ -15,10 +18,6 @@ setup(
     author_email="alexander.k.spb@gmail.com",
     packages=["StatTools", "StatTools.analysis", "StatTools.generators", "StatTools.tests"],
     include_package_data=True,
-    install_requires=[
-        "numpy >= 1.19.2",
-        "tqdm >= 4.50.1",
-        "rich >= 10.9.0"
-    ],
+    install_requires=requirements,
     description="A set of tools which allows to generate and process long-term dependent datasets",
 )
