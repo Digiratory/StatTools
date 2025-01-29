@@ -47,7 +47,10 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel build
+          python -m pip install --upgrade pip setuptools wheel build numpy
+
+      - name: Check installed packages
+        run: pip list
 
       - name: Build wheels
         run: |
