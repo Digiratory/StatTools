@@ -16,7 +16,7 @@ setup(
     author="Alexandr Kuzmenko",
     author_email="alexander.k.spb@gmail.com",
     packages=["StatTools", "StatTools.analysis",
-              "StatTools.generators", "StatTools.tests"],
+              "StatTools.generators"],
     include_package_data=True,
     install_requires=requirements,
     description="A set of tools which allows to generate and process long-term dependent datasets",

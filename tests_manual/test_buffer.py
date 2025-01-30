@@ -1,10 +1,10 @@
 import time
 from contextlib import closing
 from functools import partial
-from multiprocessing import Pool, Array, cpu_count, Process, freeze_support
+from multiprocessing import Pool
 
 from memory_profiler import profile
-from numpy import array, frombuffer, copyto, sort, mean, ndarray
+from numpy import mean
 from numpy.random import normal
 from ctypes import c_double
 from numpy.random import normal
