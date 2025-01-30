@@ -1,16 +1,12 @@
-import time
-from functools import reduce, partial
+from functools import partial
 from typing import Optional
 
-from memory_profiler import profile
-from numpy import int64, save, nonzero, where, uint8, array, max, min, ndarray, get_include, zeros
-from numpy.random import randn, normal
+from numpy import uint8, array, max, min, ndarray, zeros
+from numpy.random import randn
 from math import floor
 from ctypes import c_double
 from StatTools.auxiliary import SharedBuffer
-from PIL import Image
 from random import gauss
-# from memory_profiler import profile
 from C_StatTools import fbm_core
 
 
@@ -117,7 +113,5 @@ if __name__ == '__main__':
     # im.save("filename.jpeg")
 
     arr = fb_motion(0.5, 12)
-    im = Image.fromarray(arr)
-    im.save("filename.jpeg")
 
     # some_func()
