@@ -33,6 +33,7 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         if [[ "${{ runner.os }}" == "macOS" ]]; then
           pip install numpy --prefer-binary
+          pip install scipy --prefer-binary
           pip install --no-binary :all: -r requirements.txt
         else
           pip install -r requirements.txt
