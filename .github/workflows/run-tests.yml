@@ -49,6 +49,7 @@ jobs:
         shell: bash
         run: |
           python setup.py sdist
+          pip install StatTools
 
       - name: Run tests
         run: |
