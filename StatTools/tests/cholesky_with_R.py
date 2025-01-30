@@ -2,8 +2,6 @@ from StatTools.analysis.dpcca import dpcca
 from StatTools.generators.base_filter import FilteredArray
 from StatTools.generators.cholesky_transform import CorrelatedArray
 from StatTools.auxiliary import PearsonParallel
-from seaborn import heatmap
-from matplotlib.pyplot import show, title
 
 
 if __name__ == '__main__':
@@ -17,7 +15,3 @@ if __name__ == '__main__':
         correlated_vectors = CorrelatedArray(data=empirical_data, threads=threads).create(corr_target=R[i])
 
         corr = PearsonParallel(correlated_vectors).create_matrix(threads=threads)
-
-        heatmap(corr)
-        title(f"S = {s}")
-        show()

@@ -5,9 +5,7 @@ from scipy import signal
 import numpy as np
 
 from StatTools.analysis.dpcca import dpcca
-from StatTools.generators.base_filter import Filter
 
-import matplotlib.pyplot as plt
 
 testdata = [
     (1.0),

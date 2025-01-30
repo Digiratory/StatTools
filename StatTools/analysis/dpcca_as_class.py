@@ -2,13 +2,11 @@ from collections.abc import Iterable
 from ctypes import c_double
 from functools import partial
 from multiprocessing import Pool
-from matplotlib.pyplot import plot, semilogy, show, ylabel, xlabel, legend, title, loglog
-from numpy import array, ndarray, log, array_split, arange, loadtxt, polyfit, polyval, zeros, mean, sqrt, dstack, stack, \
-    vstack, cumsum, concatenate, any, log10, round, savetxt, int64, convolve, ones, insert, append
+from numpy import array, ndarray, array_split, arange, polyfit, polyval, zeros, mean, sqrt, \
+    cumsum, concatenate
 from numpy.linalg import inv
 from typing import Union
 from contextlib import closing
-from numpy.random import normal
 from StatTools.auxiliary import SharedBuffer
 import gc
 

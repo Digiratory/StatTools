@@ -1,8 +1,6 @@
-from matplotlib.pyplot import title, show, subplots
 from StatTools.analysis.dpcca import dpcca
 from StatTools.generators.base_filter import FilteredArray
 from StatTools.generators.cholesky_transform import CorrelatedArray
-from seaborn import heatmap
 
 
 if __name__ == '__main__':
@@ -25,13 +23,3 @@ if __name__ == '__main__':
 
         # Еще раз DPCCA
         p_, r_, f_, s_ = dpcca(chol_vectors, pd=2, step=0.5, s=s, processes=threads)
-
-        fig, (ax1, ax2) = subplots(1, 2)
-        heatmap(r[s_i], ax=ax1)
-        ax1.set_title('Initial corr matrix (DPCCA R)')
-        heatmap(r_[s_i], ax=ax2)
-        ax2.set_title('Cholesky corr matrix')
-        fig.suptitle(f'S = {s_val}')
-        show()
-
-

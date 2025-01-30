@@ -4,7 +4,6 @@ import numpy as np
 from scipy import signal, stats
 
 from StatTools.analysis import fa
-import matplotlib.pyplot as plt
 testdata = [
     (0.25),
     (0.5),

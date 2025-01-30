@@ -23,16 +23,11 @@
 #       comments=False - выводить комментарии в консоль или нет, чтобы отслеживать
 #       какой этап выполняется в данный момент.
 #       progress_bar=True - выводить или нет бар прогресса (удобнее чем комментарии)
-#       show_surface=True - показывать или нет поверхность после расчета. Используется
-#       библиотека matplotlib, 3D-графики в ней оптимизированы намного слабее, чем
-#       аналог в Matlab.
 # ---------------------------------------------------------------------------------------
 
 
 from multiprocessing.process import current_process
 import numpy
-from matplotlib import cm
-from matplotlib.pyplot import figure, show
 from numpy.random.mtrand import normal
 from functools import partial
 from math import log, ceil
@@ -135,7 +130,7 @@ def crop_out(input_array, cropped, given_length, given_width):
 
     return cropped
 
-def fields(H, length, comments=False, R=2, parallel=False, show_surface=False, return_axises=False, progress_bar=False):
+def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, progress_bar=False):
     if progress_bar:
         if not parallel:
             try:
@@ -320,18 +315,6 @@ def fields(H, length, comments=False, R=2, parallel=False, show_surface=False, r
     if progress_bar:
         bar.update()
 
-    if show_surface:
-        fig = figure()
-        ax = fig.gca(projection='3d')
-        surf = ax.plot_surface(X, Y, field1, cmap=cm.coolwarm, linewidth=0, antialiased=True)
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-        ax.set_ylim(0, 1)
-        ax.set_xlim(0, 1)
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Field")
-        show()
-
     if comments:
         print("-> Returning result . . .")
     if return_axises:
@@ -339,7 +322,7 @@ def fields(H, length, comments=False, R=2, parallel=False, show_surface=False, r
     else:
         return [field1, field2]
 
-def start(H, quantity, length, fields_length=0, parallel=False, comments=False, R=2, show_surface=False,
+def start(H, quantity, length, fields_length=0, parallel=False, comments=False, R=2,
           fast_fields=True, return_axises=False, progress_bar=False):
 
     def parameters_handler(quantity, length, fields_length, comments, fast_fields):
@@ -383,10 +366,10 @@ def start(H, quantity, length, fields_length=0, parallel=False, comments=False, 
     fields_length = parameters_handler(quantity, length, fields_length, comments, fast_fields)
 
     if H > 1:
-        res = fields(H=H - 1, length=fields_length, comments=comments, R=R, parallel=parallel, show_surface=show_surface,
+        res = fields(H=H - 1, length=fields_length, comments=comments, R=R, parallel=parallel,
                      return_axises=return_axises, progress_bar=progress_bar)
     else:
-        res = fields(H=H, length=fields_length, comments=comments, R=R, parallel=parallel, show_surface=show_surface,
+        res = fields(H=H, length=fields_length, comments=comments, R=R, parallel=parallel,
                      return_axises=return_axises, progress_bar=progress_bar)
     field1 = crop_out(res[0], zeros((quantity, length), dtype=float), quantity, length)
     field2 = crop_out(res[1], zeros((quantity, length), dtype=float), quantity, length)
@@ -405,22 +388,6 @@ def start(H, quantity, length, fields_length=0, parallel=False, comments=False, 
 
     res = None
 
-    if show_surface and H <= 1:
-        if not return_axises:
-            print("If you need to see the surface after taking the gradient of field use return_axises=True !")
-        else:
-            fig = figure()
-            ax = fig.gca(projection='3d')
-            surf = ax.plot_surface(X, Y, field1, cmap=cm.coolwarm, linewidth=0, antialiased=True)
-            fig.colorbar(surf, shrink=0.5, aspect=5)
-            ax.set_ylim(0, 1)
-            ax.set_xlim(0, 1)
-            ax.set_xlabel("X")
-            ax.set_ylabel("Y")
-            ax.set_zlabel("Field")
-            ax.set_title("After gradient")
-            show()
-
     if return_axises:
         return [field1, field2, X, Y]
     else:
@@ -429,7 +396,7 @@ def start(H, quantity, length, fields_length=0, parallel=False, comments=False, 
 if __name__ == '__main__':
     freeze_support()
     print("Use field_generator.start() for full processing . . .")
-    ret = start(1.3, 1000, 1440, parallel=True, comments=True, show_surface=True, return_axises=True)
+    ret = start(1.3, 1000, 1440, parallel=True, comments=True, return_axises=True)
 
     print(ret)
     print(ret[0].shape)
