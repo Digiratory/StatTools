@@ -128,9 +128,10 @@ jobs:
           mkdir -p dist
           find ./artifacts -name "*.whl" -exec cp {} ./dist \;
 
-      - name: List artifacts
+      - name: Copy .tar.gz files to dist directory
         run: |
-          ls -R ./artifacts
+          mkdir -p dist
+          find ./artifacts -name "*.tar.gz" -exec cp {} ./dist \;
 
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
