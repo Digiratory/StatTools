@@ -103,7 +103,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: fluctuation-analysis-tools-*
-          path: ./wheelhouse
+          path: ./dist
 
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
@@ -115,7 +115,7 @@ jobs:
           body: |
             This release was created based on the tag **${{ steps.get-release.outputs.tag }}**.
           files: |
-            ./wheelhouse/*.whl
+            ./dist/*.whl
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
