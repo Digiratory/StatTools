@@ -105,6 +105,10 @@ jobs:
           pattern: fluctuation-analysis-tools-*
           path: ./artifacts
 
+      - name: List artifacts
+        run: |
+          ls -R ./artifacts
+
       - name: Unzip artifacts
         run: |
           mkdir -p dist
