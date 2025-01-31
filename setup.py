@@ -10,8 +10,6 @@ module = Extension('C_StatTools',
 requirements = [line.strip() for line in open("requirements.txt").readlines()]
 
 setup(
-    name="FluctuationAnalysisTools",
-    version="1.6.1a9",
     ext_modules=[module],
     packages=["StatTools", "StatTools.analysis",
               "StatTools.generators"],
