@@ -95,7 +95,7 @@ jobs:
         id: get-release
         run: |
           TAG=$(git describe --tags --abbrev=0)
-          RELEASE_NAME=$(echo "$TAG" | sed 's/^release///')
+          RELEASE_NAME=$(echo "$TAG" | sed 's|^release/||')
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
 
