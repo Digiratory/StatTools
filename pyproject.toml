@@ -7,6 +7,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
+name = "FluctuationAnalysisTools"
 authors = [
   {name = "Aleksandr Sinitca", email = "amsinitca@etu.ru"},
   {name = "Alexandr Kuzmenko", email = "alexander.k.spb@gmail.com"},
