@@ -105,16 +105,10 @@ jobs:
           pattern: fluctuation-analysis-tools-*
           path: ./artifacts
 
-      - name: List artifacts
-        run: |
-          ls -R ./artifacts
-
-      - name: Unzip artifacts
+      - name: Copy .whl files to dist directory
         run: |
           mkdir -p dist
-          for zipfile in ./artifacts/*.zip; do
-            unzip "$zipfile" -d ./dist
-          done
+          find ./artifacts -name "*.whl" -exec cp {} ./dist \;
 
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
