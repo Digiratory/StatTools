@@ -11,7 +11,7 @@ requirements = [line.strip() for line in open("requirements.txt").readlines()]
 
 setup(
     name="FluctuationAnalysisTools",
-    version="1.6.1a6",
+    version="1.6.1a7",
     ext_modules=[module],
     author="Alexandr Kuzmenko",
     author_email="alexander.k.spb@gmail.com",

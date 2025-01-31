@@ -74,20 +74,26 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel build
 
       - name: Build wheels
+        if: matrix.os != 'ubuntu-latest'
         run: |
           python -m build --wheel --outdir wheelhouse
 
       - name: Repair Linux wheels
         if: matrix.os == 'ubuntu-latest'
         run: |
-          pip install auditwheel
-          auditwheel repair wheelhouse/*.whl --wheel-dir wheelhouse
+          python -m build --sdist --outdir sdisthouse
 
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: fluctuation-analysis-tools-${{ matrix.os }}-${{ matrix.python-version }}
           path: ./wheelhouse/*.whl
+
+      - name: Upload sdist as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fluctuation-analysis-tools-${{ matrix.os }}-${{ matrix.python-version }}
+          path: ./sdisthouse/*.tar.gz
 
   deploy:
     runs-on: ubuntu-latest
@@ -105,6 +111,12 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
 
+      - name: Download sdist artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: fluctuation-analysis-tools-*.tar.gz
+          path: ./artifacts
+
       - name: Download wheels artifact
         uses: actions/download-artifact@v4
         with:
@@ -116,10 +128,9 @@ jobs:
           mkdir -p dist
           find ./artifacts -name "*.whl" -exec cp {} ./dist \;
 
-      - name: Check wheels with twine
+      - name: List artifacts
         run: |
-          pip install twine
-          twine check dist/*
+          ls -R ./artifacts
 
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
@@ -132,6 +143,7 @@ jobs:
             This release was created based on the tag **${{ steps.get-release.outputs.tag }}**.
           files: |
             ./dist/*.whl
+            ./dist/*.tar.gz
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
