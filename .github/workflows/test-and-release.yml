@@ -103,7 +103,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: fluctuation-analysis-tools-*
-          path: ./dist
+          path: ./artifacts
+
+      - name: Unzip artifacts
+        run: |
+          mkdir -p dist
+          for zipfile in ./artifacts/*.zip; do
+            unzip "$zipfile" -d ./dist
+          done
 
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
