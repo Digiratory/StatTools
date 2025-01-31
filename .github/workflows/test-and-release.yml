@@ -75,7 +75,13 @@ jobs:
 
       - name: Build wheels
         run: |
-          python -m build --wheel --outdir wheelhouse
+          python -m build --wheel --outdir wheelhouse --universal
+
+      - name: Repair Linux wheels
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          pip install auditwheel
+          auditwheel repair wheelhouse/*.whl --wheel-dir wheelhouse
 
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4
@@ -109,6 +115,11 @@ jobs:
         run: |
           mkdir -p dist
           find ./artifacts -name "*.whl" -exec cp {} ./dist \;
+
+      - name: Check wheels with twine
+        run: |
+          pip install twine
+          twine check dist/*
 
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
