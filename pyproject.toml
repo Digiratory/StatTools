@@ -5,3 +5,15 @@ requires = [
     "numpy>=1.22.4",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+authors = [
+  {name = "Aleksandr Sinitca", email = "amsinitca@etu.ru"},
+  {name = "Alexandr Kuzmenko", email = "alexander.k.spb@gmail.com"},
+  {name = "Asya Lyanova", email = "ailianova@etu.ru"},
+]
+maintainers = [
+  {name = "Aleksandr Sinitca", email = "amsinitca@etu.ru"}
+]
+description = "This library allows to create and process long-term dependent datasets."
+readme = "README.md"
