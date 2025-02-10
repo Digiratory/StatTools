@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "FluctuationAnalysisTools"
-version = "1.6.1a10"
+version = "1.6.1a11"
 authors = [
   {name = "Aleksandr Sinitca", email = "amsinitca@etu.ru"},
   {name = "Alexandr Kuzmenko", email = "alexander.k.spb@gmail.com"},
