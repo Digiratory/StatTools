@@ -1,0 +1,21 @@
+[build-system]
+requires = [
+    "setuptools>=57.0.0",
+    "wheel",
+    "numpy>=1.22.4",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "FluctuationAnalysisTools"
+version = "1.6.1"
+authors = [
+  {name = "Aleksandr Sinitca", email = "amsinitca@etu.ru"},
+  {name = "Alexandr Kuzmenko", email = "alexander.k.spb@gmail.com"},
+  {name = "Asya Lyanova", email = "ailianova@etu.ru"},
+]
+maintainers = [
+  {name = "Aleksandr Sinitca", email = "amsinitca@etu.ru"}
+]
+description = "This library allows to create and process long-term dependent datasets."
+readme = "README.md"

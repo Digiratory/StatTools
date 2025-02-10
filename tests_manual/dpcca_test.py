@@ -1,14 +1,10 @@
 import ctypes
 import time
 
-from memory_profiler import profile
 from numpy.random import normal
-from pympler import asizeof
 from StatTools.analysis.dpcca import dpcca, movmean
 from StatTools.generators.base_filter import Filter
-from matplotlib.pyplot import loglog, legend, show, title
 from StatTools.auxiliary import SharedBuffer
-import gc
 
 
 
@@ -20,17 +16,11 @@ def run_to_compare_with_matlab():
     threads = 12
 
     x = Filter(h, length).generate()
-
     p1, r1, f1, s1 = dpcca(x, 2, step, s, processes=threads)
-    loglog(s1, f1, label=f"Initial {len(x)}")
 
     for k in [2 ** i for i in [8, 10, 12]]:
         x2 = movmean(x, k)
         p2, r2, f2, s2 = dpcca(x2, 2, step, s, processes=threads)
-
-        loglog(s2, f2, label=f"Movmean(k={k})")
-    legend()
-    show()
 
 # @profile
 def run_to_test_buffer():
@@ -61,9 +51,6 @@ def run_to_test_buffer():
 
     f_s = [f[s_i][vector_to_check][vector_to_check] for s_i in range(len(s_out))]
 
-    loglog(s_out, f_s)
-    title(f"F(s) for {vector_to_check} vector")
-    show()
 
 
 if __name__ == '__main__':
