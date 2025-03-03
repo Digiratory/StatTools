@@ -75,10 +75,14 @@ class HurstGenerator:
     Generates a sequence of numbers based on the Hurst index.
     The Hurst index is a measure of long-term memory of time series.
 
-    Parameters:
-        h: Hearst index (0 < H < 2)
-        filter_len: Filter length
-        base: Base of the number system for pancakes (default 2)
+    Args:
+        h (float): Hurst index (0 < H < 2)
+        filter_len (int): Filter length
+        base (int, optional): Base of the number system for bins. Defaults to 2.
+    Raises:
+        ValueError: If Hurst exponent is not in a range (0, 2)
+        ValueError: If filter length is not positive.
+        StopIteration: If maximum sequence length has been reached.
         
     Example usage:
     >>> generator = HurstGenerator(h, filter_len, base)
