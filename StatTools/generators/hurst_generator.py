@@ -72,12 +72,19 @@ def get_adaptive_filter_coefficients(
 
 class HurstGenerator:
     """
-    A signal generator with a given Hurst exponent.
+    Generates a sequence of numbers based on the Hurst index.
+    The Hurst index is a measure of long-term memory of time series.
 
     Parameters:
         h: Hearst index (0 < H < 2)
         filter_len: Filter length
         base: Base of the number system for pancakes (default 2)
+        
+    Example usage:
+    >>> generator = HurstGenerator(h, filter_len, base)
+    >>> trj = []
+    >>> for value in islice(generator, TARGET_LEN):
+    >>>     trj.append(value)
     """
 
     def __init__(self, h: float, filter_len: int, base: int = 2) -> None:
@@ -90,15 +97,20 @@ class HurstGenerator:
         self.base = base
         self.current_time = 0
         self.bins = []
+        self.max_steps = None
 
         self._init_bins()
         self._init_filter()
+
+    def __iter__(self):
+        return self
 
     def _init_bins(self):
         """Initializes the structure of bins and their boundaries."""
         self.bin_sizes = [1] + [int(self.base**n) for n in range(self.filter_len - 1)]
         self.bins = [0.0] * self.filter_len
         self.bin_limits = list(itertools.accumulate(self.bin_sizes))
+        self.max_steps = sum(self.bin_sizes)
 
     def _init_filter(self):
         """Initializes the filter coefficients based on the Hurst exponent."""
@@ -121,7 +133,7 @@ class HurstGenerator:
     def _update_bins(self, new_value: float) -> None:
         """Updates the beans with a new value."""
         updated = []
-        for i, bin in enumerate(self.bins):
+        for i, curr_bin in enumerate(self.bins):
             if i == 0:
                 updated.append(new_value)
                 continue
@@ -129,14 +141,14 @@ class HurstGenerator:
                 # incomplete bin
                 # We do not subtract from the curr if there is no transition through bin.
                 prev = signed_power(self.bins[i - 1], (1 / self.bin_sizes[i - 1]))
-                bin_upd = bin + prev
+                bin_upd = curr_bin + prev
                 updated.append(bin_upd)
                 # other = 0
                 updated += [0.0] * (len(self.bins) - len(updated))
                 break
-            curr = signed_power(bin, (1 / self.bin_sizes[i]))
+            curr = signed_power(curr_bin, (1 / self.bin_sizes[i]))
             prev = signed_power(self.bins[i - 1], (1 / self.bin_sizes[i - 1]))
-            bin_upd = bin - curr + prev
+            bin_upd = curr_bin - curr + prev
             updated.append(bin_upd)
         self.bins = updated
 
@@ -144,8 +156,12 @@ class HurstGenerator:
         """Applies a filter."""
         return lfilter(np.ones(self.filter_len), self.A, self.bins[::-1])[-1]
 
-    def generate(self) -> float:
+    def __next__(self):
         """Generates the next signal value."""
+        if self.current_time >= self.max_steps:
+            raise StopIteration(
+                f"The maximum sequence length {self.max_steps} has been reached."
+            )
         self.current_time += 1
         new_val = np.random.randn()
         self._update_bins(new_val)

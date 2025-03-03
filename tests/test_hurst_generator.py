@@ -1,4 +1,5 @@
 import pytest
+from itertools import islice
 import math
 from scipy import stats
 from StatTools.analysis.dpcca import dpcca
@@ -34,8 +35,8 @@ def get_test_h(
     """
     generator = HurstGenerator(h, filter_len, base)
     trj = []
-    for _ in range(TARGET_LEN):
-        trj.append(generator.generate())
+    for value in islice(generator, TARGET_LEN):
+        trj.append(value)
 
     Z = normalize(np.array(trj[::-1]))
     _, _, f_z, s_z = dpcca(Z, 2, step, S, processes=1, n_integral=0)
