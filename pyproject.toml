@@ -21,7 +21,7 @@ maintainers = [
 ]
 description = "This library allows to create and process long-term dependent datasets."
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 
 [project.urls]
 Repository = "https://github.com/Digiratory/StatTools.git"
