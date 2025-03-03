@@ -8,3 +8,4 @@ StatTools.egg-info/*
 .vscode/*
 .venv/*
 .env
+StatTools/_version.py
