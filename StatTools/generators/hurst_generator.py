@@ -121,7 +121,7 @@ class HurstGenerator:
     def _update_bins(self, new_value: float) -> None:
         """Updates the beans with a new value."""
         updated = []
-        for i, _ in enumerate(self.bins):
+        for i, bin in enumerate(self.bins):
             if i == 0:
                 updated.append(new_value)
                 continue
