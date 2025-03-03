@@ -1,14 +1,16 @@
 [build-system]
 requires = [
-    "setuptools>=57.0.0",
+    "setuptools>=64.0.0",
     "wheel",
     "numpy>=1.22.4",
+    "setuptools-scm>=8",
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "FluctuationAnalysisTools"
-version = "1.6.1"
+# version = "1.6.1"
+dynamic = ["version"]
 authors = [
   {name = "Aleksandr Sinitca", email = "amsinitca@etu.ru"},
   {name = "Alexandr Kuzmenko", email = "alexander.k.spb@gmail.com"},
@@ -19,3 +21,13 @@ maintainers = [
 ]
 description = "This library allows to create and process long-term dependent datasets."
 readme = "README.md"
+license = {text = "MIT"}
+
+[project.urls]
+Repository = "https://github.com/Digiratory/StatTools.git"
+Issues = "https://github.com/Digiratory/StatTools/issues"
+Changelog = "https://github.com/Digiratory/StatTools/blob/main/CHANGELOG.md"
+
+[tool.setuptools_scm]
+version_file = "StatTools/_version.py"
+tag_regex = "^release/([\\.0-9]+)$"
