@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from StatTools.analysis.dpcca import dpcca
-from StatTools.generators.hurst_generator import HurstGenerator, normalize
+from StatTools.generators.lbfbm_generator import LBFBmGenerator, normalize
 
 testdata = {
     "h_list": [i * 0.01 for i in range(50, 150, 10)],
@@ -33,7 +33,7 @@ def get_test_h(
     Returns:
         Calculated Hurst exponent (h_gen)
     """
-    generator = HurstGenerator(h, filter_len, base)
+    generator = LBFBmGenerator(h, filter_len, base)
     trj = []
     for value in islice(generator, TARGET_LEN):
         trj.append(value)
@@ -48,9 +48,9 @@ def get_test_h(
 
 @pytest.mark.parametrize("h", testdata["h_list"])
 @pytest.mark.parametrize("base", testdata["base_list"])
-def test_hurst_generator(h: float, base: float):
+def test_lbfbm_generator(h: float, base: float):
     """
-    It tests the generator for compliance with the specified Hurst indicator.
+    It tests the generator for compliance with the specified Hurst exponent.
 
     Parameters:
         h: The specified Hurst exponent

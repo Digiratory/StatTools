@@ -70,7 +70,7 @@ def get_adaptive_filter_coefficients(
     return coefficients
 
 
-class HurstGenerator:
+class LBFBmGenerator:
     """
     Generates a sequence of numbers based on the Hurst exponent.
     The Hurst exponent is a measure of long-term memory of time series.
@@ -85,7 +85,7 @@ class HurstGenerator:
         StopIteration: If maximum sequence length has been reached.
         
     Example usage:
-    >>> generator = HurstGenerator(h, filter_len, base)
+    >>> generator = LBFBmGenerator(h, filter_len, base)
     >>> trj = []
     >>> for value in islice(generator, TARGET_LEN):
     >>>     trj.append(value)
