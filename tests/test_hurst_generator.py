@@ -1,11 +1,11 @@
-import pytest
 from itertools import islice
 import math
 from scipy import stats
-from StatTools.analysis.dpcca import dpcca
-
-from StatTools.generators.hurst_generator import HurstGenerator, normalize
 import numpy as np
+import pytest
+
+from StatTools.analysis.dpcca import dpcca
+from StatTools.generators.hurst_generator import HurstGenerator, normalize
 
 testdata = {
     "h_list": [i * 0.01 for i in range(50, 150, 10)],

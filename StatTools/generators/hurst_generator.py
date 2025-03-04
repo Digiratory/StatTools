@@ -72,11 +72,11 @@ def get_adaptive_filter_coefficients(
 
 class HurstGenerator:
     """
-    Generates a sequence of numbers based on the Hurst index.
-    The Hurst index is a measure of long-term memory of time series.
+    Generates a sequence of numbers based on the Hurst exponent.
+    The Hurst exponent is a measure of long-term memory of time series.
 
     Args:
-        h (float): Hurst index (0 < H < 2)
+        h (float): Hurst exponent (0 < H < 2)
         filter_len (int): Filter length
         base (int, optional): Base of the number system for bins. Defaults to 2.
     Raises:
