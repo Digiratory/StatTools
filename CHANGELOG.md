@@ -1,3 +1,8 @@
+# 1.7.0
+
+* [GH-10](https://github.com/Digiratory/StatTools/issues/10) build: enable wheel building with setuptools-scm.
+* [GH-10](https://github.com/Digiratory/StatTools/issues/10) doc: enchance pyproject.toml with urls for repository, issues, and changelog.
+
 # 1.6.1
 
 * [PR-3](https://github.com/Digiratory/StatTools/pull/3) feat: add conventional FA
@@ -14,4 +19,4 @@
 
 # 1.1.0
 
-*  Added C-compiled modules
+* Added C-compiled modules
