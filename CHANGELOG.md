@@ -1,3 +1,6 @@
+# 1.6.2
+* [PR-8](https://github.com/Digiratory/StatTools/pull/8) feat: add LBFBm generator, that generates a sequence based on the Hurst exponent.
+
 # 1.6.1
 
 * [PR-3](https://github.com/Digiratory/StatTools/pull/3) feat: add conventional FA

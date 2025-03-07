@@ -83,7 +83,7 @@ class LBFBmGenerator:
         ValueError: If Hurst exponent is not in a range (0, 2)
         ValueError: If filter length is not positive.
         StopIteration: If maximum sequence length has been reached.
-        
+
     Example usage:
     >>> generator = LBFBmGenerator(h, filter_len, base)
     >>> trj = []
