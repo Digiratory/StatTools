@@ -1,5 +1,7 @@
-# 1.6.2
-* [PR-8](https://github.com/Digiratory/StatTools/pull/8) feat: add LBFBm generator, that generates a sequence based on the Hurst exponent.
+# 1.7.0
+* [GH-5](https://github.com/Digiratory/StatTools/issues/5) feat: add LBFBm generator, that generates a sequence based on the Hurst exponent.
+* [GH-10](https://github.com/Digiratory/StatTools/issues/10) build: enable wheel building with setuptools-scm.
+* [GH-10](https://github.com/Digiratory/StatTools/issues/10) doc: enchance pyproject.toml with urls for repository, issues, and changelog.
 
 # 1.6.1
 
@@ -17,4 +19,4 @@
 
 # 1.1.0
 
-*  Added C-compiled modules
+* Added C-compiled modules
