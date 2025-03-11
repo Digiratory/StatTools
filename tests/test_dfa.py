@@ -47,19 +47,23 @@ def test_find_h_2d():
 
 def test_find_h_empty_input():
     """Test with empty input"""
-    with pytest.raises(NameError):
+    with pytest.raises(NameError) as exc_info:
         DFA([])
+    assert "Input file is empty!" in str(exc_info.value)
 
 def test_find_h_short_input():
     """Test with too short input"""
-    data = generate_fgn(1, 1.0)
-    DFA(data)
+    data = generate_fgn(10, 1.0)  # Less than 20 samples
+    with pytest.raises(NameError) as exc_info:
+        DFA(data)
+    assert "Input array is too small!" in str(exc_info.value)
 
 def test_find_h_3d_input():
     """Test with 3D input (should raise error)"""
     data = np.random.normal(0, 1, (5, 5, 5))
-    with pytest.raises(NameError):
+    with pytest.raises(NameError) as exc_info:
         DFA(data)
+    assert "Only 1- or 2-dimensional arrays are allowed!" in str(exc_info.value)
 
 # TODO: fix tests for root and degree
 # def test_find_h_with_root():
