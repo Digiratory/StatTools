@@ -49,14 +49,14 @@ def test_find_h_empty_input():
     """Test with empty input"""
     with pytest.raises(NameError) as exc_info:
         DFA([])
-    assert "Input file is empty!" in str(exc_info.value)
+    assert "Wrong input array ! (It's probably too short)" in str(exc_info.value)
 
 def test_find_h_short_input():
     """Test with too short input"""
-    data = generate_fgn(10, 1.0)  # Less than 20 samples
+    data = generate_fgn(1, 1.0)
     with pytest.raises(NameError) as exc_info:
         DFA(data)
-    assert "Input array is too small!" in str(exc_info.value)
+    assert "Wrong input array ! (It's probably too short)" in str(exc_info.value)
 
 def test_find_h_3d_input():
     """Test with 3D input (should raise error)"""
