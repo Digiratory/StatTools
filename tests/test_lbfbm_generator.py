@@ -17,23 +17,6 @@ STEP = 1
 TARGET_LEN = 4000
 
 
-def generate_trajectory(generator: LBFBmGenerator, target_len: int) -> np.ndarray:
-    """
-    Generates a trajectory of a specified length from the given generator.
-
-    Args:
-        generator (LBFBmGenerator): The generator to use for generating the trajectory.
-        target_len (int): The desired length of the trajectory.
-
-    Returns:
-        np.ndarray: The generated trajectory as an array.
-    """
-    trj = []
-    for value in islice(generator, target_len):
-        trj.append(value)
-    return np.array(trj)
-
-
 def calculate_hurst_exponent(
     trajectory: np.ndarray, scales: np.ndarray, step: float
 ) -> float:
@@ -82,8 +65,8 @@ def get_test_h(
     Returns:
         Calculated Hurst exponent (h_gen)
     """
-    generator = LBFBmGenerator(h, filter_len, base)
-    trj = generate_trajectory(generator, target_len)
+    generator = LBFBmGenerator(h, filter_len, base, length=target_len)
+    trj = list(generator)
     res = calculate_hurst_exponent(trj, scales, step)
     return res
 
@@ -102,7 +85,7 @@ def test_lbfbm_generator(h: float, base: float):
     times = 10
     filter_len = int(math.log(TARGET_LEN, base))
     mean_difference = 0
-    for i in range(times):
+    for _ in range(times):
         h_gen = get_test_h(base, filter_len, h, SCALES, STEP, TARGET_LEN)
 
         mean_difference += abs(h_gen - h) / h
