@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Iterator, Optional
 import itertools
 import numpy as np
 from scipy.signal import lfilter
@@ -79,6 +79,11 @@ class LBFBmGenerator:
         h (float): Hurst exponent (0 < H < 2)
         filter_len (int): Filter length
         base (int, optional): Base of the number system for bins. Defaults to 2.
+        random_generator (Iterator[float], optional): Iterator providing random values.
+            Defaults to None, in which case np.random.randn() is used.
+        length (Optional[int], optional): Maximum length of the sequence.
+            Defaults to None for unlimited sequence.
+
     Raises:
         ValueError: If Hurst exponent is not in a range (0, 2)
         ValueError: If filter length is not positive.
@@ -86,12 +91,17 @@ class LBFBmGenerator:
 
     Example usage:
     >>> generator = LBFBmGenerator(h, filter_len, base)
-    >>> trj = []
-    >>> for value in islice(generator, TARGET_LEN):
-    >>>     trj.append(value)
+    >>> trj = list(generator)  # Get sequence of specified length
     """
 
-    def __init__(self, h: float, filter_len: int, base: int = 2) -> None:
+    def __init__(
+        self,
+        h: float,
+        filter_len: int,
+        base: int = 2,
+        random_generator: Optional[Iterator[float]] = None,
+        length: Optional[int] = None
+    ) -> None:
         if not 0 < h <= 2:
             raise ValueError("Hurst exponent must be in (0, 2)")
         if filter_len < 1:
@@ -102,6 +112,8 @@ class LBFBmGenerator:
         self.current_time = 0
         self.bins = []
         self.max_steps = None
+        self.length = length
+        self.random_generator = random_generator or (n for n in iter(np.random.randn, None))
 
         self._init_bins()
         self._init_filter()
@@ -162,14 +174,19 @@ class LBFBmGenerator:
 
     def __next__(self):
         """Generates the next signal value."""
-        if self.current_time >= self.max_steps:
-            raise StopIteration(
-                f"The maximum sequence length {self.max_steps} has been reached."
-            )
+        if self.length is not None and self.current_time >= self.length:
+            raise StopIteration
+            
         self.current_time += 1
-        new_val = np.random.randn()
+        new_val = next(self.random_generator)
         self._update_bins(new_val)
         return self._calculate_step()
+
+    def __len__(self) -> int:
+        """Returns the length of the sequence if specified."""
+        if self.length is None:
+            raise TypeError("Length is not defined for unlimited generator")
+        return self.length
 
     @property
     def current_bins(self) -> np.ndarray:
