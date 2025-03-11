@@ -83,7 +83,7 @@ def get_test_h(
         Calculated Hurst exponent (h_gen)
     """
     generator = LBFBmGenerator(h, filter_len, base)
-    trj = generate_trajectory(generator, target_len)[::-1]
+    trj = generate_trajectory(generator, target_len)
     res = calculate_hurst_exponent(trj, scales, step)
     return res
 
