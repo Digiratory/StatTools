@@ -1,8 +1,8 @@
+import warnings
 from typing import List, Iterator, Optional
 import itertools
 import numpy as np
 from scipy.signal import lfilter
-
 
 def signed_power(base: float, degree: float) -> float:
     """
@@ -87,7 +87,7 @@ class LBFBmGenerator:
     Raises:
         ValueError: If Hurst exponent is not in a range (0, 2)
         ValueError: If filter length is not positive.
-        StopIteration: If maximum sequence length has been reached.
+        StopIteration('Sequence exhausted') : If maximum sequence length has been reached.
 
     Example usage:
     >>> generator = LBFBmGenerator(h, filter_len, base)
@@ -123,7 +123,7 @@ class LBFBmGenerator:
 
     def _init_bins(self):
         """Initializes the structure of bins and their boundaries."""
-        self.bin_sizes = [1] + [int(self.base**n) for n in range(self.filter_len - 1)]
+        self.bin_sizes: List[int] = [1] + [int(self.base**n) for n in range(self.filter_len - 1)]
         self.bins = [0.0] * self.filter_len
         self.bin_limits = list(itertools.accumulate(self.bin_sizes))
         self.max_steps = sum(self.bin_sizes)
@@ -175,9 +175,11 @@ class LBFBmGenerator:
     def __next__(self):
         """Generates the next signal value."""
         if self.length is not None and self.current_time >= self.length:
-            raise StopIteration
+            raise StopIteration('Sequence exhausted')
             
         self.current_time += 1
+        if self.current_time >= self.max_steps:
+            warnings.warn(f"Sequence length {self.current_time} exceeded the maximum allowed length {self.max_steps}", RuntimeWarning)
         new_val = next(self.random_generator)
         self._update_bins(new_val)
         return self._calculate_step()
