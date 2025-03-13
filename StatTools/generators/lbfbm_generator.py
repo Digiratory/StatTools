@@ -1,8 +1,10 @@
+import math
 import warnings
 from typing import List, Iterator, Optional
 import itertools
 import numpy as np
 from scipy.signal import lfilter
+
 
 def signed_power(base: float, degree: float) -> float:
     """
@@ -97,24 +99,22 @@ class LBFBmGenerator:
     def __init__(
         self,
         h: float,
-        filter_len: int,
         base: int = 2,
         random_generator: Optional[Iterator[float]] = None,
-        length: Optional[int] = None
+        length: Optional[int] = 10_000,
     ) -> None:
         if not 0 < h <= 2:
             raise ValueError("Hurst exponent must be in (0, 2)")
-        if filter_len < 1:
-            raise ValueError("Filter length must be positive")
         self.h = h
-        self.filter_len = filter_len
         self.base = base
         self.current_time = 0
         self.bins = []
         self.max_steps = None
         self.length = length
-        self.random_generator = random_generator or (n for n in iter(np.random.randn, None))
-
+        self.random_generator = random_generator or (
+            n for n in iter(np.random.randn, None)
+        )
+        self.filter_len = self._find_filter_len(base, length)
         self._init_bins()
         self._init_filter()
 
@@ -123,7 +123,9 @@ class LBFBmGenerator:
 
     def _init_bins(self):
         """Initializes the structure of bins and their boundaries."""
-        self.bin_sizes: List[int] = [1] + [int(self.base**n) for n in range(self.filter_len - 1)]
+        self.bin_sizes: List[int] = [1] + [
+            int(self.base**n) for n in range(self.filter_len - 1)
+        ]
         self.bins = [0.0] * self.filter_len
         self.bin_limits = list(itertools.accumulate(self.bin_sizes))
         self.max_steps = sum(self.bin_sizes)
@@ -138,13 +140,13 @@ class LBFBmGenerator:
             orig_len += int(self.base**i)
 
         # Generating the initial coefficients
-        A = np.zeros(orig_len)
-        A[0] = 1.0
+        matrix_a = np.zeros(orig_len)
+        matrix_a[0] = 1.0
         for k in range(1, orig_len):
-            A[k] = (k - 1 - beta / 2) * A[k - 1] / k
+            matrix_a[k] = (k - 1 - beta / 2) * matrix_a[k - 1] / k
 
         # Optimize filter
-        self.A = get_adaptive_filter_coefficients(self.bin_sizes, A)
+        self.matrix_a = get_adaptive_filter_coefficients(self.bin_sizes, matrix_a)
 
     def _update_bins(self, new_value: float) -> None:
         """Updates the beans with a new value."""
@@ -168,18 +170,26 @@ class LBFBmGenerator:
             updated.append(bin_upd)
         self.bins = updated
 
+    def _find_filter_len(self, base, length):
+        if base == 1:
+            return length
+        return int(round(math.log((length - 1) * (base - 1) + 1, base), 0) + 2)
+
     def _calculate_step(self) -> float:
         """Applies a filter."""
-        return lfilter(np.ones(self.filter_len), self.A, self.bins[::-1])[-1]
+        return lfilter(np.ones(self.filter_len), self.matrix_a, self.bins[::-1])[-1]
 
     def __next__(self):
         """Generates the next signal value."""
         if self.length is not None and self.current_time >= self.length:
-            raise StopIteration('Sequence exhausted')
-            
+            raise StopIteration("Sequence exhausted")
+
         self.current_time += 1
         if self.current_time >= self.max_steps:
-            warnings.warn(f"Sequence length {self.current_time} exceeded the maximum allowed length {self.max_steps}", RuntimeWarning)
+            warnings.warn(
+                f"Sequence length {self.current_time} exceeded the maximum allowed length {self.max_steps}",
+                RuntimeWarning,
+            )
         new_val = next(self.random_generator)
         self._update_bins(new_val)
         return self._calculate_step()
@@ -197,7 +207,7 @@ class LBFBmGenerator:
 
     def get_filter_coefficients(self) -> np.ndarray:
         """Returns the current filter coefficients."""
-        return self.A
+        return self.matrix_a
 
     def get_bin_sizes(self) -> List[int]:
         """Returns the bin sizes."""

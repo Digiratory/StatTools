@@ -1,5 +1,3 @@
-from itertools import islice
-import math
 from scipy import stats
 import numpy as np
 import pytest
@@ -46,7 +44,6 @@ def calculate_hurst_exponent(
 
 def get_test_h(
     base: float,
-    filter_len: int,
     h: float,
     scales: np.ndarray,
     step: int,
@@ -65,9 +62,9 @@ def get_test_h(
     Returns:
         Calculated Hurst exponent (h_gen)
     """
-    generator = LBFBmGenerator(h, filter_len, base, length=target_len)
-    trj = list(generator)
-    res = calculate_hurst_exponent(trj, scales, step)
+    generator = LBFBmGenerator(h, base, length=target_len)
+    trajectory = list(generator)
+    res = calculate_hurst_exponent(trajectory, scales, step)
     return res
 
 
@@ -83,13 +80,12 @@ def test_lbfbm_generator(h: float, base: float):
     """
     threshold = 0.10
     times = 10
-    filter_len = int(math.log(TARGET_LEN, base))
     mean_difference = 0
     for _ in range(times):
-        h_gen = get_test_h(base, filter_len, h, SCALES, STEP, TARGET_LEN)
+        h_gen = get_test_h(base, h, SCALES, STEP, TARGET_LEN)
 
         mean_difference += abs(h_gen - h) / h
     mean_difference /= times
     assert (
         mean_difference <= threshold
-    ), f"Diff between h and h_gen exceeds {threshold * 100}%: h={h}, mean diff={mean_difference * 100:.2f}%"
+    ), f"Diff between h and h_gen exceeds {threshold * 100}%: h={h}, h_gen={h_gen}, mean diff={mean_difference * 100:.2f}%"
