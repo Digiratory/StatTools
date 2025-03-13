@@ -82,7 +82,7 @@ class LBFBmGenerator:
         filter_len (int): Filter length
         base (int, optional): Base of the number system for bins. Defaults to 2.
         random_generator (Iterator[float], optional): Iterator providing random values.
-            Defaults to None, in which case np.random.randn() is used.
+            Defaults is iter(np.random.randn(), None).
         length (Optional[int], optional): Maximum length of the sequence.
             Defaults to None for unlimited sequence.
 
@@ -100,7 +100,7 @@ class LBFBmGenerator:
         self,
         h: float,
         base: int = 2,
-        random_generator: Optional[Iterator[float]] = None,
+        random_generator: Optional[Iterator[float]] = iter(np.random.randn, None),
         length: Optional[int] = 10_000,
     ) -> None:
         if not 0 < h <= 2:
@@ -111,9 +111,7 @@ class LBFBmGenerator:
         self.bins = None
         self.max_steps = None
         self.length = length
-        self.random_generator = random_generator or (
-            n for n in iter(np.random.randn, None)
-        )
+        self.random_generator = random_generator
         self.filter_len = self._find_filter_len(base, length)
         self._init_bins()
         self._init_filter()
@@ -123,9 +121,9 @@ class LBFBmGenerator:
 
     def _init_bins(self):
         """Initializes the structure of bins and their boundaries."""
-        self.bin_sizes = np.array([1] + [
-            int(self.base**n) for n in range(self.filter_len - 1)
-        ])
+        self.bin_sizes = np.array(
+            [1] + [int(self.base**n) for n in range(self.filter_len - 1)]
+        )
         self.bins = np.zeros(self.filter_len)
         self.bin_limits = np.cumsum(self.bin_sizes)
         self.max_steps = np.sum(self.bin_sizes)
@@ -162,9 +160,7 @@ class LBFBmGenerator:
                 # incomplete bin
                 # We do not subtract from the curr if there is no transition through bin.
                 if prev is None:
-                    prev = signed_power(
-                        self.bins[i - 1], (1 / self.bin_sizes[i - 1])
-                    )
+                    prev = signed_power(self.bins[i - 1], (1 / self.bin_sizes[i - 1]))
                 updated[i] = curr_bin + prev
                 break
 

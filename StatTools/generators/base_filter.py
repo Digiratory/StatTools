@@ -119,9 +119,9 @@ class Filter:
     def __next__(self):
         """Get the next value from the trajectory."""
         if self._trajectory is None:
-            raise StopIteration
+            raise StopIteration("Trajectory is not initialized!")
         if self._current_index >= len(self._trajectory):
-            raise StopIteration
+            raise StopIteration("Length of trajectory is exceeded!")
         value = self._trajectory[self._current_index]
         self._current_index += 1
         return value
