@@ -108,7 +108,7 @@ class LBFBmGenerator:
         self.h = h
         self.base = base
         self.current_time = 0
-        self.bins = []
+        self.bins = None
         self.max_steps = None
         self.length = length
         self.random_generator = random_generator or (
@@ -123,12 +123,12 @@ class LBFBmGenerator:
 
     def _init_bins(self):
         """Initializes the structure of bins and their boundaries."""
-        self.bin_sizes: List[int] = [1] + [
+        self.bin_sizes = np.array([1] + [
             int(self.base**n) for n in range(self.filter_len - 1)
-        ]
-        self.bins = [0.0] * self.filter_len
-        self.bin_limits = list(itertools.accumulate(self.bin_sizes))
-        self.max_steps = sum(self.bin_sizes)
+        ])
+        self.bins = np.zeros(self.filter_len)
+        self.bin_limits = np.cumsum(self.bin_sizes)
+        self.max_steps = np.sum(self.bin_sizes)
 
     def _init_filter(self):
         """Initializes the filter coefficients based on the Hurst exponent."""
@@ -150,24 +150,30 @@ class LBFBmGenerator:
 
     def _update_bins(self, new_value: float) -> None:
         """Updates the beans with a new value."""
-        updated = []
+        updated = np.zeros_like(self.bins)
+        prev = None
+
         for i, curr_bin in enumerate(self.bins):
             if i == 0:
-                updated.append(new_value)
+                updated[i] = new_value
                 continue
+
             if self.current_time <= self.bin_limits[i]:
                 # incomplete bin
                 # We do not subtract from the curr if there is no transition through bin.
-                prev = signed_power(self.bins[i - 1], (1 / self.bin_sizes[i - 1]))
-                bin_upd = curr_bin + prev
-                updated.append(bin_upd)
-                # other = 0
-                updated += [0.0] * (len(self.bins) - len(updated))
+                if prev is None:
+                    prev = signed_power(
+                        self.bins[i - 1], (1 / self.bin_sizes[i - 1])
+                    )
+                updated[i] = curr_bin + prev
                 break
+
             curr = signed_power(curr_bin, (1 / self.bin_sizes[i]))
-            prev = signed_power(self.bins[i - 1], (1 / self.bin_sizes[i - 1]))
-            bin_upd = curr_bin - curr + prev
-            updated.append(bin_upd)
+            if prev is None:
+                prev = signed_power(self.bins[i - 1], (1 / self.bin_sizes[i - 1]))
+            updated[i] = curr_bin - curr + prev
+            prev = curr
+
         self.bins = updated
 
     def _find_filter_len(self, base, length):
@@ -209,10 +215,10 @@ class LBFBmGenerator:
         """Returns the current filter coefficients."""
         return self.matrix_a
 
-    def get_bin_sizes(self) -> List[int]:
+    def get_bin_sizes(self) -> np.ndarray:
         """Returns the bin sizes."""
         return self.bin_sizes
 
-    def get_signal_from_bins(self) -> List[float]:
+    def get_signal_from_bins(self) -> np.ndarray:
         """Returns the sum of the values for each bin."""
-        return [np.sum(bin) for bin in self.bins]
+        return np.sum(self.bins)
