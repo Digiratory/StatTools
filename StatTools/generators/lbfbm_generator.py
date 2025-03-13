@@ -1,9 +1,9 @@
 import math
 import warnings
 from typing import List, Iterator, Optional
-import itertools
 import numpy as np
 from scipy.signal import lfilter
+from numpy.typing import NDArray
 
 
 def signed_power(base: float, degree: float) -> float:
@@ -20,11 +20,10 @@ def signed_power(base: float, degree: float) -> float:
     """
     if base == 0:
         return 0.0
-    sign = np.sign(base)
-    return sign * np.abs(base) ** degree
+    return np.sign(base) * np.abs(base) ** degree
 
 
-def normalize(data: np.ndarray) -> np.ndarray:
+def normalize(data: NDArray[np.float64]) -> NDArray[np.float64]:
     """
     Normalizes the data to a zero mean and a single standard deviation.
 
@@ -62,7 +61,7 @@ def get_adaptive_filter_coefficients(
         segment = data[index : index + length]
         if length > threshold:
             weights = np.linspace(1, 0.1, length)
-            coeff = np.dot(segment, weights) / weights.sum()
+            coeff = np.average(segment, weights=weights)
         else:
             coeff = segment[len(segment) // 2]
 
@@ -79,8 +78,7 @@ class LBFBmGenerator:
 
     Args:
         h (float): Hurst exponent (0 < H < 2)
-        filter_len (int): Filter length
-        base (int, optional): Base of the number system for bins. Defaults to 2.
+        base (int, optional): Base of the number system for bins. Defaults to 1.1.
         random_generator (Iterator[float], optional): Iterator providing random values.
             Defaults is iter(np.random.randn(), None).
         length (Optional[int], optional): Maximum length of the sequence.
@@ -88,61 +86,60 @@ class LBFBmGenerator:
 
     Raises:
         ValueError: If Hurst exponent is not in a range (0, 2)
-        ValueError: If filter length is not positive.
+        ValueError: If base is less than 1
+        ValueError: If length is less than 1
         StopIteration('Sequence exhausted') : If maximum sequence length has been reached.
 
     Example usage:
-    >>> generator = LBFBmGenerator(h, filter_len, base)
+    >>> generator = LBFBmGenerator(h, base, length)
     >>> trj = list(generator)  # Get sequence of specified length
     """
 
     def __init__(
         self,
         h: float,
-        base: int = 2,
+        base: int = 1.1,
         random_generator: Optional[Iterator[float]] = iter(np.random.randn, None),
         length: Optional[int] = 10_000,
     ) -> None:
         if not 0 < h <= 2:
             raise ValueError("Hurst exponent must be in (0, 2)")
+        if base < 1:
+            raise ValueError("Base must be more than 1")
+        if length is not None and length < 1:
+            raise ValueError("Length must be more than 1")
+
         self.h = h
         self.base = base
         self.current_time = 0
-        self.bins = None
-        self.max_steps = None
         self.length = length
         self.random_generator = random_generator
         self.filter_len = self._find_filter_len(base, length)
-        self._init_bins()
+        
+        self.bins: NDArray[np.float64] = np.zeros(self.filter_len, dtype=np.float64)
+        self.bin_sizes: NDArray[np.int64] = np.array(
+            [1] + [int(self.base**n) for n in range(self.filter_len - 1)],
+            dtype=np.int64
+        )
+        self.bin_limits: NDArray[np.int64] = np.cumsum(self.bin_sizes)
+        self.max_steps: int = np.sum(self.bin_sizes)
+        
         self._init_filter()
 
-    def __iter__(self):
-        return self
-
-    def _init_bins(self):
-        """Initializes the structure of bins and their boundaries."""
-        self.bin_sizes = np.array(
-            [1] + [int(self.base**n) for n in range(self.filter_len - 1)]
-        )
-        self.bins = np.zeros(self.filter_len)
-        self.bin_limits = np.cumsum(self.bin_sizes)
-        self.max_steps = np.sum(self.bin_sizes)
-
-    def _init_filter(self):
+    def _init_filter(self) -> None:
         """Initializes the filter coefficients based on the Hurst exponent."""
         beta = 2 * self.h - 1
 
-        # Calculating the length of the initial filter
+        # Initialize filter
         orig_len = 1
         for i in range(self.filter_len - 1):
             orig_len += int(self.base**i)
-
-        # Generating the initial coefficients
-        matrix_a = np.zeros(orig_len)
+        
+        matrix_a = np.zeros(orig_len, dtype=np.float64)
         matrix_a[0] = 1.0
-        for k in range(1, orig_len):
-            matrix_a[k] = (k - 1 - beta / 2) * matrix_a[k - 1] / k
-
+        k = np.arange(1, orig_len)
+        matrix_a[1:] = np.cumprod((k - 1 - beta / 2) / k)
+        
         # Optimize filter
         self.matrix_a = get_adaptive_filter_coefficients(self.bin_sizes, matrix_a)
 
@@ -181,7 +178,10 @@ class LBFBmGenerator:
         """Applies a filter."""
         return lfilter(np.ones(self.filter_len), self.matrix_a, self.bins[::-1])[-1]
 
-    def __next__(self):
+    def __iter__(self) -> 'LBFBmGenerator':
+        return self
+
+    def __next__(self) -> float:
         """Generates the next signal value."""
         if self.length is not None and self.current_time >= self.length:
             raise StopIteration("Sequence exhausted")
@@ -203,18 +203,18 @@ class LBFBmGenerator:
         return self.length
 
     @property
-    def current_bins(self) -> np.ndarray:
+    def current_bins(self) -> NDArray[np.float64]:
         """Returns the current bin values."""
         return self.bins
 
-    def get_filter_coefficients(self) -> np.ndarray:
+    def get_filter_coefficients(self) -> NDArray[np.float64]:
         """Returns the current filter coefficients."""
         return self.matrix_a
 
-    def get_bin_sizes(self) -> np.ndarray:
+    def get_bin_sizes(self) -> NDArray[np.int64]:
         """Returns the bin sizes."""
         return self.bin_sizes
 
-    def get_signal_from_bins(self) -> np.ndarray:
+    def get_signal_from_bins(self) -> float:
         """Returns the sum of the values for each bin."""
         return np.sum(self.bins)
