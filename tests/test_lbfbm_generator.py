@@ -7,12 +7,11 @@ from StatTools.generators.lbfbm_generator import LBFBmGenerator, normalize
 
 testdata = {
     "h_list": [i * 0.01 for i in range(50, 150, 10)],
-    "base_list": [1.2],
+    "base_list": [1.1],
+    "rate_list": [12, 14],
 }
 
-SCALES = np.array([2**i for i in range(3, 9)])
 STEP = 1
-TARGET_LEN = 4000
 
 
 def calculate_hurst_exponent(
@@ -70,7 +69,8 @@ def get_test_h(
 
 @pytest.mark.parametrize("h", testdata["h_list"])
 @pytest.mark.parametrize("base", testdata["base_list"])
-def test_lbfbm_generator(h: float, base: float):
+@pytest.mark.parametrize("rate", testdata["rate_list"])
+def test_lbfbm_generator(h: float, base: float, rate: int):
     """
     It tests the generator for compliance with the specified Hurst exponent.
 
@@ -81,8 +81,10 @@ def test_lbfbm_generator(h: float, base: float):
     threshold = 0.10
     times = 10
     mean_difference = 0
+    length = 2**rate
+    scales = np.array([2**i for i in range(3, rate - 3)])
     for _ in range(times):
-        h_gen = get_test_h(base, h, SCALES, STEP, TARGET_LEN)
+        h_gen = get_test_h(base, h, scales, STEP, length)
 
         mean_difference += abs(h_gen - h) / h
     mean_difference /= times
