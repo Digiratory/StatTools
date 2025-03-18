@@ -1,5 +1,7 @@
 # 1.7.0
 * [GH-5](https://github.com/Digiratory/StatTools/issues/5) feat: add LBFBm generator, that generates a sequence based on the Hurst exponent.
+* [PR-8](https://github.com/Digiratory/StatTools/pull/8) refactor: rework filter-based generator.
+* [PR-8](https://github.com/Digiratory/StatTools/pull/8) tests: add new tests for DFA and generators.
 * [GH-10](https://github.com/Digiratory/StatTools/issues/10) build: enable wheel building with setuptools-scm.
 * [GH-10](https://github.com/Digiratory/StatTools/issues/10) doc: enchance pyproject.toml with urls for repository, issues, and changelog.
 
