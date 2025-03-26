@@ -115,15 +115,15 @@ class LBFBmGenerator:
         self.length = length
         self.random_generator = random_generator
         self.filter_len = self._find_filter_len(base, length)
-        
+
         self.bins: NDArray[np.float64] = np.zeros(self.filter_len, dtype=np.float64)
         self.bin_sizes: NDArray[np.int64] = np.array(
             [1] + [int(self.base**n) for n in range(self.filter_len - 1)],
-            dtype=np.int64
+            dtype=np.int64,
         )
         self.bin_limits: NDArray[np.int64] = np.cumsum(self.bin_sizes)
         self.max_steps: int = np.sum(self.bin_sizes)
-        
+
         self._init_filter()
 
     def _init_filter(self) -> None:
@@ -134,12 +134,12 @@ class LBFBmGenerator:
         orig_len = 1
         for i in range(self.filter_len - 1):
             orig_len += int(self.base**i)
-        
+
         matrix_a = np.zeros(orig_len, dtype=np.float64)
         matrix_a[0] = 1.0
         k = np.arange(1, orig_len)
         matrix_a[1:] = np.cumprod((k - 1 - beta / 2) / k)
-        
+
         # Optimize filter
         self.matrix_a = get_adaptive_filter_coefficients(self.bin_sizes, matrix_a)
 
@@ -178,11 +178,16 @@ class LBFBmGenerator:
         """Applies a filter."""
         return lfilter(np.ones(self.filter_len), self.matrix_a, self.bins[::-1])[-1]
 
-    def __iter__(self) -> 'LBFBmGenerator':
+    def __iter__(self) -> "LBFBmGenerator":
         return self
 
     def __next__(self) -> float:
         """Generates the next signal value."""
+        new_val = next(self.random_generator)
+        return self.next_with_value(new_val)
+
+    def next_with_value(self, new_val: float) -> float:
+        """Generates the next signal value using a given new value."""
         if self.length is not None and self.current_time >= self.length:
             raise StopIteration("Sequence exhausted")
 
@@ -192,7 +197,6 @@ class LBFBmGenerator:
                 f"Sequence length {self.current_time} exceeded the maximum allowed length {self.max_steps}",
                 RuntimeWarning,
             )
-        new_val = next(self.random_generator)
         self._update_bins(new_val)
         return self._calculate_step()
 
