@@ -176,18 +176,19 @@ class LBFBmGenerator:
 
     def _calculate_step(self) -> float:
         """Applies a filter."""
-        return lfilter(np.ones(self.filter_len), self.matrix_a, self.bins[::-1])[-1]
+        res = lfilter(np.ones(self.filter_len), self.matrix_a, self.bins[::-1])
+        return res[-1] - res[-2]
 
     def __iter__(self) -> "LBFBmGenerator":
         return self
 
     def __next__(self) -> float:
-        """Generates the next signal value."""
+        """Generates the next signal increment."""
         new_val = next(self.random_generator)
         return self.next_with_value(new_val)
 
     def next_with_value(self, new_val: float) -> float:
-        """Generates the next signal value using a given new value."""
+        """Generates the next signal increment using a given new value."""
         if self.length is not None and self.current_time >= self.length:
             raise StopIteration("Sequence exhausted")
 
