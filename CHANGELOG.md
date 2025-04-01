@@ -1,3 +1,6 @@
+# 1.7.1
+* [GH-15](https://github.com/Digiratory/StatTools/issues/15) feat&fix: LBFBm generator update: generate with input value and return an increment instead of the absolute value of the signal.
+
 # 1.7.0
 * [GH-5](https://github.com/Digiratory/StatTools/issues/5) feat: add LBFBm generator, that generates a sequence based on the Hurst exponent.
 * [PR-8](https://github.com/Digiratory/StatTools/pull/8) refactor: rework filter-based generator.

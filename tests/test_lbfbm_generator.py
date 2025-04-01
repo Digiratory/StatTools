@@ -6,7 +6,7 @@ from StatTools.analysis.dpcca import dpcca
 from StatTools.generators.lbfbm_generator import LBFBmGenerator, normalize
 
 testdata = {
-    "h_list": [i * 0.01 for i in range(50, 150, 10)],
+    "h_list": [i * 0.01 for i in range(50, 160, 15)],
     "base_list": [1.1],
     "rate_list": [12, 14],
 }
@@ -34,7 +34,7 @@ def calculate_hurst_exponent(
         and then calculates the Hurst exponent using linear regression.
     """
     signal_z = normalize(trajectory)
-    _, _, f_z, s_z = dpcca(signal_z, 2, step, scales, processes=1, n_integral=0)
+    _, _, f_z, s_z = dpcca(signal_z, 2, step, scales, processes=1, n_integral=1)
     f_z = np.sqrt(f_z)
     f_z /= f_z[0]
     res = stats.linregress(np.log(s_z), np.log(f_z)).slope
