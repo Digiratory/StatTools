@@ -32,6 +32,17 @@ def test_find_h_with_known_h(h_target):
     assert abs(h - h_target) < 0.05, f"Wrong h: expected {h_target}, got {h}"
 
 
+@pytest.mark.parametrize("h_target", TEST_H_VALUES)
+def test_find_h_with_known_h_gapped(h_target):
+    """Test DFA with signals of known Hurst exponent"""
+    np.random.seed(42)
+    length = 2**13
+    data = generate_fgn(length, h_target)
+    data[0::100] = np.nan
+    dfa = DFA(data)
+    h = dfa.find_h()
+    assert abs(h - h_target) < 0.05, f"Wrong h: expected {h_target}, got {h}"
+
 def test_find_h_2d():
     """Test DFA with multiple time series"""
     np.random.seed(42)
