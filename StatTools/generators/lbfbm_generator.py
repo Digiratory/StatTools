@@ -133,7 +133,7 @@ class LBFBmGenerator:
         orig_len = 1
         for i in range(self.filter_len - 1):
             orig_len += int(self.base**i)
-        matrix_a = AutoregressiveFilter(self.h, orig_len).get_matrix()
+        matrix_a = AutoregressiveFilter(self.h, orig_len).get_vector()
 
         # Optimize filter
         self.matrix_a = get_adaptive_filter_coefficients(self.bin_sizes, matrix_a)
