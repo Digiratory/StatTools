@@ -30,7 +30,7 @@ from StatTools.filters import FilteredArray
 
 h = 0.8                 # choose Hurst parameter
 total_vectors = 1000    # total number of vectors in output
-vectors_length = 1440   # each vector's length 
+vectors_length = 1440   # each vector's length
 t = 8                   # threads in use during computation
 
 correlated_vectors = Filter(h, vectors_length).generate(n_vectors=total_vectors,
@@ -49,12 +49,24 @@ base = 1.2          # the basis for the filter optimization algorithm
 target_len = 4000   # number of generation iterations
 
 generator = LBFBmGenerator(h, filter_len, base)
-trajectory = []
+signal = []
     for value in islice(generator, target_len):
-        trajectory.append(value)
+        signal.append(value)
 ```
 
 For more information and generator validation, see [lbfbm_generator.ipynb](/research/lbfbm_generator.ipynb).
+
+It is also possible to use the method of generating increments with a given H using `KasdinGenerator`.
+
+```python
+from StatTools.generators.kasdin_generator import KasdinGenerator
+h = 0.8             # choose Hurst parameter
+target_len = 4000   # number of generation iterations
+
+generator = KasdinGenerator(h, length=target_len)
+signal = list(generator)
+```
+For more information see Kasdin, N. J. (1995). Discrete simulation of colored noise and stochastic processes and 1/f/sup /spl alpha// power law noise generation. doi:10.1109/5.381848.
 
 ### Fluctuational Analysis
 

@@ -8,7 +8,9 @@ from scipy.signal import lfilter
 class KasdinGenerator:
     """
     Generates a sequence of numbers according to the Kasdin model.
-    Based on paper Kasdin, N. J. (1995). Discrete simulation of colored noise and stochastic processes and 1/f/sup α/ power law noise generation. doi:10.1109/5.381848
+    Based on the method proposed in the article Kasdin, N. J. (1995).
+        Discrete simulation of colored noise and stochastic processes and 1/f/sup /spl alpha// power law noise generation.
+        doi:10.1109/5.381848
 
     Args:
         h (float): Hurst exponent (0 < H < 2)

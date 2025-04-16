@@ -2,6 +2,7 @@
 
 ## 1.7.1
 
+* [GH-23](https://github.com/Digiratory/StatTools/issues/23) feat: add Kasdin generator. fix: change first arg in lfilter in LBFBm generator.
 * [GH-15](https://github.com/Digiratory/StatTools/issues/15) feat&fix: LBFBm generator update: generate with input value and return an increment instead of the absolute value of the signal.
 
 ## 1.7.0
