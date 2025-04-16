@@ -35,7 +35,7 @@ def get_test_h(
 
 @pytest.mark.parametrize("h", testdata["h_list"])
 @pytest.mark.parametrize("rate", testdata["rate_list"])
-def test_lbfbm_generator(h: float, rate: int):
+def test_kasdin_generator(h: float, rate: int):
     """
     It tests the generator for compliance with the specified Hurst exponent.
 
