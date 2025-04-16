@@ -37,13 +37,36 @@ class EnhancedKalmanFilter(KalmanFilter):
         signal = np.diff(signal)
         return np.array([[np.nanvar(signal)]])
 
-    def auto_configure(self, signal: np.array, dt: float):
+    def get_F(self, ar_v: np.array) -> np.array:
         """
-        Automatically adjusts Q and R based on the input signal.
+        Calculates the F for the Kalman filter.
+
+        Parameters:
+            ar_v (np.array): Autoregressive filter coefficients
+
+        Returns:
+            np.array: matrix F
+        """
+        # matrix = np.zeros((self.dim_x, self.dim_x))
+        if self.dim_x != 3 or ar_v is None:
+            print("Use simple matrix")
+            return np.eye(self.dim_x)
+        matrix = [
+            [-ar_v[0] - ar_v[1] - ar_v[2], ar_v[1] + 2 * ar_v[2], -ar_v[2]],
+            [-1 - ar_v[0] - ar_v[1] - ar_v[2], ar_v[1] + 2 * ar_v[2], -ar_v[2]],
+            [-1 - ar_v[0] - ar_v[1] - ar_v[2], -1 + ar_v[1] + 2 * ar_v[2], -ar_v[2]],
+        ]
+        return np.array(matrix)
+
+    def auto_configure(self, signal: np.array, dt: float, ar_vector: np.array = None):
+        """
+        Automatically adjusts Q, R, F based on the input data.
 
         Parameters:
             signal (np.array): Input signal (observations)
             dt (float): Time interval between measurements
+            ar_vector(np.array): Autoregressive filter coefficients
         """
         self.Q = self.get_Q(signal, dt)
         self.R = self.get_R(signal)
+        self.F = self.get_F(ar_vector)
