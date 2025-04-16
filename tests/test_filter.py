@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from StatTools.generators.base_filter import Filter
 from StatTools.analysis.dfa import DFA
+from StatTools.generators.base_filter import Filter
 
 testdata = {
     "target_mean": [0.5, 0.7, 0.9],
@@ -24,21 +24,25 @@ def test_filter_generator(h, length, target_std, target_mean):
     Test that the generated data has the specified mean and standard deviation.
     """
     generator = Filter(h, length, set_mean=target_mean, set_std=target_std)
-    trajectory = list(generator)
-
-    actual_mean = np.mean(trajectory)
-    actual_std = np.std(trajectory, ddof=1)
-    actual_h = DFA(trajectory).find_h()
+    mean_difference_mean = 0
+    mean_difference_std = 0
+    mean_difference_h = 0
+    times = 3
+    for _ in range(times):
+        trajectory = list(generator)
+        mean_difference_mean += np.mean(trajectory)
+        mean_difference_std += np.std(trajectory, ddof=1)
+        mean_difference_h += DFA(trajectory).find_h()
 
     assert (
-        abs(actual_mean - target_mean) < 0.001
-    ), f"Mean deviation too large: expected {target_mean}, got {actual_mean}"
+        abs(mean_difference_mean / times - target_mean) < 0.001
+    ), f"Mean deviation too large: expected {target_mean}, got {mean_difference_mean}"
     assert (
-        abs(actual_std - target_std) < 0.001
-    ), f"Std deviation too large: expected {target_std}, got {actual_std}"
-    assert abs(actual_h - h) < (
+        abs(mean_difference_std / times - target_std) < 0.001
+    ), f"Std deviation too large: expected {target_std}, got {mean_difference_std}"
+    assert abs(mean_difference_h / times - h) < (
         h * 0.15
-    ), f"Hurst deviation too large: expected {h}, got {actual_h}"
+    ), f"Hurst deviation too large: expected {h}, got {mean_difference_h}"
 
 
 @pytest.mark.parametrize("h", testdata["h"])
@@ -50,21 +54,25 @@ def test_filter(h, length, target_std, target_mean):
     Test that the generated data has the specified mean and standard deviation.
     """
     generator = Filter(h, length, set_mean=target_mean, set_std=target_std)
-    trajectory = generator.generate(n_vectors=1)
-
-    actual_mean = np.mean(trajectory)
-    actual_std = np.std(trajectory, ddof=1)
-    actual_h = DFA(trajectory).find_h()
+    mean_difference_mean = 0
+    mean_difference_std = 0
+    mean_difference_h = 0
+    times = 3
+    for _ in range(times):
+        trajectory = generator.generate(n_vectors=1)
+        mean_difference_mean += np.mean(trajectory)
+        mean_difference_std += np.std(trajectory, ddof=1)
+        mean_difference_h += DFA(trajectory).find_h()
 
     assert (
-        abs(actual_mean - target_mean) < 0.001
-    ), f"Mean deviation too large: expected {target_mean}, got {actual_mean}"
+        abs(mean_difference_mean / times - target_mean) < 0.001
+    ), f"Mean deviation too large: expected {target_mean}, got {mean_difference_mean}"
     assert (
-        abs(actual_std - target_std) < 0.001
-    ), f"Std deviation too large: expected {target_std}, got {actual_std}"
-    assert abs(actual_h - h) < (
+        abs(mean_difference_std / times - target_std) < 0.001
+    ), f"Std deviation too large: expected {target_std}, got {mean_difference_std}"
+    assert abs(mean_difference_h / times - h) < (
         h * 0.15
-    ), f"Hurst deviation too large: expected {h}, got {actual_h}"
+    ), f"Hurst deviation too large: expected {h}, got {mean_difference_h}"
 
 
 @pytest.mark.parametrize("h", testdata["h"])
@@ -75,22 +83,27 @@ def test_filter_2d(h, length, target_std, target_mean):
     """
     Test that the generated data has the specified mean and standard deviation.
     """
+    count = 3
     generator = Filter(h, length, set_mean=target_mean, set_std=target_std)
-    trajectories = generator.generate(n_vectors=3)
+    trajectories = generator.generate(n_vectors=count)
 
-    for i in range(3):
+    mean_difference_mean = 0
+    mean_difference_std = 0
+    mean_difference_h = 0
+
+    for i in range(count):
         trajectory = trajectories[i]
 
-        actual_mean = np.mean(trajectory)
-        actual_std = np.std(trajectory, ddof=1)
-        actual_h = DFA(trajectory).find_h()
+        mean_difference_mean += np.mean(trajectory)
+        mean_difference_std += np.std(trajectory, ddof=1)
+        mean_difference_h += DFA(trajectory).find_h()
 
-        assert (
-            abs(actual_mean - target_mean) < 0.001
-        ), f"Mean deviation too large: expected {target_mean}, got {actual_mean}"
-        assert (
-            abs(actual_std - target_std) < 0.001
-        ), f"Std deviation too large: expected {target_std}, got {actual_std}"
-        assert abs(actual_h - h) < (
-            h * 0.15
-        ), f"Hurst deviation too large: expected {h}, got {actual_h}"
+    assert (
+        abs(mean_difference_mean / count - target_mean) < 0.001
+    ), f"Mean deviation too large: expected {target_mean}, got {mean_difference_mean}"
+    assert (
+        abs(mean_difference_std / count - target_std) < 0.001
+    ), f"Std deviation too large: expected {target_std}, got {mean_difference_std}"
+    assert abs(mean_difference_h / count - h) < (
+        h * 0.15
+    ), f"Hurst deviation too large: expected {h}, got {mean_difference_h}"

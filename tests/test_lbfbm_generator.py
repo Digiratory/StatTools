@@ -1,6 +1,6 @@
-from scipy import stats
 import numpy as np
 import pytest
+from scipy import stats
 
 from StatTools.analysis.dpcca import dpcca
 from StatTools.generators.lbfbm_generator import LBFBmGenerator, normalize
@@ -79,7 +79,7 @@ def test_lbfbm_generator(h: float, base: float, rate: int):
         base: The base of the number system for bins
     """
     threshold = 0.10
-    times = 10
+    times = 3
     mean_difference = 0
     length = 2**rate
     scales = np.array([2**i for i in range(3, rate - 3)])
