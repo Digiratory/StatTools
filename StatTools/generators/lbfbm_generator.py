@@ -1,9 +1,10 @@
 import math
 import warnings
-from typing import List, Iterator, Optional
+from typing import Iterator, List, Optional
+
 import numpy as np
-from scipy.signal import lfilter
 from numpy.typing import NDArray
+from scipy.signal import lfilter
 
 
 def signed_power(base: float, degree: float) -> float:
@@ -176,8 +177,7 @@ class LBFBmGenerator:
 
     def _calculate_step(self) -> float:
         """Applies a filter."""
-        res = lfilter(np.ones(self.filter_len), self.matrix_a, self.bins[::-1])
-        return res[-1] - res[-2]
+        return lfilter(1, self.matrix_a, self.bins[::-1])[-1]
 
     def __iter__(self) -> "LBFBmGenerator":
         return self
