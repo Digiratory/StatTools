@@ -1,10 +1,10 @@
 import math
 import warnings
-from typing import List, Iterator, Optional
+from typing import Iterator, List, Optional
+
 import numpy as np
-from scipy.signal import lfilter
 from numpy.typing import NDArray
-from StatTools.filters.autoregressive_filter import AutoregressiveFilter
+from scipy.signal import lfilter
 
 
 def signed_power(base: float, degree: float) -> float:
@@ -129,11 +129,17 @@ class LBFBmGenerator:
 
     def _init_filter(self) -> None:
         """Initializes the filter coefficients based on the Hurst exponent."""
+        beta = 2 * self.h - 1
+
         # Initialize filter
         orig_len = 1
         for i in range(self.filter_len - 1):
             orig_len += int(self.base**i)
-        matrix_a = AutoregressiveFilter(self.h, orig_len).get_vector()
+
+        matrix_a = np.zeros(orig_len, dtype=np.float64)
+        matrix_a[0] = 1.0
+        k = np.arange(1, orig_len)
+        matrix_a[1:] = np.cumprod((k - 1 - beta / 2) / k)
 
         # Optimize filter
         self.matrix_a = get_adaptive_filter_coefficients(self.bin_sizes, matrix_a)
@@ -171,8 +177,7 @@ class LBFBmGenerator:
 
     def _calculate_step(self) -> float:
         """Applies a filter."""
-        res = lfilter(np.ones(self.filter_len), self.matrix_a, self.bins[::-1])
-        return res[-1] - res[-2]
+        return lfilter(1, self.matrix_a, self.bins[::-1])[-1]
 
     def __iter__(self) -> "LBFBmGenerator":
         return self
