@@ -28,7 +28,7 @@ def get_test_h(
         Calculated Hurst exponent (h_gen)
     """
     generator = KasdinGenerator(h, length=target_len)
-    signal = np.array(list(generator))
+    signal = generator.get_full_sequence()
     dfa = DFA(signal)
     return dfa.find_h()
 

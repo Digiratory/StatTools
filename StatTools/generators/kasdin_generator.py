@@ -46,10 +46,10 @@ class KasdinGenerator:
         self.filter_coefficients[1:] = np.cumprod((k - 1 - beta / 2) / k)
 
         # generate the sequence
-        self.random_sequence = np.fromiter(
-            islice(self.random_generator, self.length), dtype=np.float64
+        random_sequence = np.fromiter(
+            islice(random_generator, self.length), dtype=np.float64
         )
-        self.sequence = lfilter(1, self.filter_coefficients, self.random_sequence)
+        self.sequence = lfilter(1, self.filter_coefficients, random_sequence)
         self.current_index = 0
 
     def get_filter_coefficients(self):
@@ -65,3 +65,7 @@ class KasdinGenerator:
             raise StopIteration("Sequence exhausted")
         self.current_index += 1
         return self.sequence[self.current_index - 1]
+
+    def get_full_sequence(self) -> np.ndarray:
+        """Return full generated sequence."""
+        return self.sequence

@@ -50,8 +50,8 @@ target_len = 4000   # number of generation iterations
 
 generator = LBFBmGenerator(h, filter_len, base)
 signal = []
-    for value in islice(generator, target_len):
-        signal.append(value)
+for value in islice(generator, target_len):
+    signal.append(value)
 ```
 
 For more information and generator validation, see [lbfbm_generator.ipynb](/research/lbfbm_generator.ipynb).
@@ -64,7 +64,14 @@ h = 0.8             # choose Hurst parameter
 target_len = 4000   # number of generation iterations
 
 generator = KasdinGenerator(h, length=target_len)
-signal = list(generator)
+
+# the first option
+signal = generator.get_full_sequence()
+
+# the second option
+signal_list = []
+for sample in generator:
+    signal_list.append(sample)
 ```
 For more information see Kasdin, N. J. (1995). Discrete simulation of colored noise and stochastic processes and 1/f/sup /spl alpha// power law noise generation. doi:10.1109/5.381848.
 
