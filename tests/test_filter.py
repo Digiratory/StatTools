@@ -27,7 +27,7 @@ def test_filter_generator(h, length, target_std, target_mean):
     mean_difference_mean = 0
     mean_difference_std = 0
     mean_difference_h = 0
-    times = 3
+    times = 5
     for _ in range(times):
         trajectory = list(generator)
         mean_difference_mean += np.mean(trajectory)
