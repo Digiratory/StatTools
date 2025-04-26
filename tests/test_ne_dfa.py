@@ -54,6 +54,7 @@ def test_equidistant(sample_signal, h_target):
     assert res_ne_dfa.slope == pytest.approx(h_target, 0.1)
 
 
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Test too long for Github Actions.")
 @pytest.mark.parametrize("h_target", TEST_H_VALUES)
 def test_nonequidistant_0_5(sample_signal, h_target):
     """Test DFA with signals of known Hurst exponent"""
