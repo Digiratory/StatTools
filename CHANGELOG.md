@@ -4,6 +4,7 @@
 
 * [GH-23](https://github.com/Digiratory/StatTools/issues/23) feat: add Kasdin generator. fix: change first arg in lfilter in LBFBm generator.
 * [GH-15](https://github.com/Digiratory/StatTools/issues/15) feat&fix: LBFBm generator update: generate with input value and return an increment instead of the absolute value of the signal.
+* [GH-25](https://github.com/Digiratory/StatTools/issues/25) feat: Detrended Fluctuation Analysis (DFA) for a nonequidistant dataset.
 
 ## 1.7.0
 
