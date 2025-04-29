@@ -30,7 +30,7 @@ Issues = "https://github.com/Digiratory/StatTools/issues"
 Changelog = "https://github.com/Digiratory/StatTools/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-docs = ["Sphinx>=8.1", "sphinxcontrib-napoleon", "sphinx_design", "sphinx-copybutton"]
+docs = ["Sphinx>=8.1", "sphinxcontrib-napoleon", "sphinx_design", "sphinx-copybutton", "docutils<0.21", "m2r2"]
 
 [tool.setuptools_scm]
 version_file = "StatTools/_version.py"

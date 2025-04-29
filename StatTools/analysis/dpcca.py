@@ -151,19 +151,23 @@ def dpcca(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Implementation of the Detrended Partial-Cross-Correlation Analysis method proposed by Yuan, N. et al.[1]
 
-    Basic usage:
+    Example:
+
         You can get whole F(s) function for first vector as:
-        ```python
+
+        .. code-block:: python
+
             s_vals = [i**2 for i in range(1, 5)]
             P, R, F, S = dpcaa(input_array, 2, 0.5, s_vals, len(s_vals))
             fluct_func = [F[s][0][0] for s in s_vals]
-        ```
+
+
     [1] Yuan, N., Fu, Z., Zhang, H. et al. Detrended Partial-Cross-Correlation Analysis:
         A New Method for Analyzing Correlations in Complex System. Sci Rep 5, 8143 (2015).
         https://doi.org/10.1038/srep08143
 
     Args:
-        arr (ndarray): dataset array
+        arr (np.ndarray): dataset array
         pd (int): polynomial degree
         step (float): share of S - value. It's set usually as 0.5. The integer part of the number will be taken
         s (Union[int, Iterable]): points where  fluctuation function F(s) is calculated. More on that in the article.

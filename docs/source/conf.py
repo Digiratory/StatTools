@@ -22,6 +22,7 @@ release = "1.10.0"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "alabaster",
     "sphinx.ext.autosummary",
     "sphinx.ext.graphviz",
     "sphinx.ext.inheritance_diagram",
@@ -31,7 +32,9 @@ extensions = [
     "sphinx_copybutton",
     #   'sphinx_tags',
     "sphinx.ext.napoleon",
+    "m2r2",
 ]
+source_suffix = [".rst", ".md"]
 
 # Napoleon settings
 napoleon_google_docstring = True
@@ -74,6 +77,21 @@ intersphinx_mapping = {
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "alabaster"
+html_theme_options = {
+    "description": "Fluctuation Analysis Tools",
+    "github_user": "Digiratory",
+    "github_repo": "StatTools",
+    "travis_button": False,
+}
+html_sidebars = {
+    "**": [
+        "about.html",
+        "searchfield.html",
+        "navigation.html",
+        "relations.html",
+        "donate.html",
+    ]
+}
 html_static_path = ["_static"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
