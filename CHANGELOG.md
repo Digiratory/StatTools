@@ -1,14 +1,18 @@
 # Changelog
-## 1.8.1
+
+## 1.9.0
 
 * [GH-18](https://github.com/Digiratory/StatTools/issues/18) feat: Enhanced Kalman filter with auto calculation of transition matrix and measurement covariance matrix based on Kasdin model.
 * [GH-18](https://github.com/Digiratory/StatTools/issues/18) fix: Add normalization to the Kasdin generator.
 
-## 1.7.1
+## 1.8.0
 
-* [GH-23](https://github.com/Digiratory/StatTools/issues/23) feat: add Kasdin generator. fix: change first arg in lfilter in LBFBm generator.
+* [GH-9](https://github.com/Digiratory/StatTools/issues/9) repo: setup pre-commit hooks.
+* [GH-12](https://github.com/Digiratory/StatTools/issues/12) docs: fix format violation in CHANGELOG.md.
 * [GH-15](https://github.com/Digiratory/StatTools/issues/15) feat&fix: LBFBm generator update: generate with input value and return an increment instead of the absolute value of the signal.
+* [GH-23](https://github.com/Digiratory/StatTools/issues/23) feat: add Kasdin generator. fix: change first arg in lfilter in LBFBm generator.
 * [GH-25](https://github.com/Digiratory/StatTools/issues/25) feat: Detrended Fluctuation Analysis (DFA) for a nonequidistant dataset.
+* [GH-28](https://github.com/Digiratory/StatTools/issues/28) repo: Exclude Jupyter Notebooks from GitHub Programming Language Stats.
 
 ## 1.7.0
 
