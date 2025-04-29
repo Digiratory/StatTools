@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
-from StatTools.analysis.dfa import DFA
 from scipy import signal
+
+from StatTools.analysis.dfa import DFA
 
 TEST_H_VALUES = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
 

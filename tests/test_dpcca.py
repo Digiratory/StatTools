@@ -1,11 +1,8 @@
-import pytest
-
-from scipy import stats
-from scipy import signal
 import numpy as np
+import pytest
+from scipy import signal, stats
 
 from StatTools.analysis.dpcca import dpcca
-
 
 testdata = [
     (1.0),

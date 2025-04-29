@@ -1,12 +1,13 @@
-import numpy
-from math import floor, exp, ceil
-from multiprocessing import Pool, Array, Value, Lock, cpu_count
-from ctypes import c_double
-from contextlib import closing
-from threading import Thread
-from functools import partial
-from tqdm import tqdm, TqdmWarning
 import time
+from contextlib import closing
+from ctypes import c_double
+from functools import partial
+from math import ceil, exp, floor
+from multiprocessing import Array, Lock, Pool, Value, cpu_count
+from threading import Thread
+
+import numpy
+from tqdm import TqdmWarning, tqdm
 
 
 def bar_manager(description, total, counter, lock, mode="total", stop_bit=None):
@@ -26,7 +27,9 @@ def bar_manager(description, total, counter, lock, mode="total", stop_bit=None):
                 with lock:
                     if counter.value > last_val:
                         if mode == "percent":
-                            bar.update(round(((counter.value - last_val) * 100 / total), 2))
+                            bar.update(
+                                round(((counter.value - last_val) * 100 / total), 2)
+                            )
                         else:
                             bar.update(counter.value - last_val)
                         last_val = counter.value
@@ -36,6 +39,7 @@ def bar_manager(description, total, counter, lock, mode="total", stop_bit=None):
                         break
         except TqdmWarning:
             return None
+
 
 class DFA:
 
@@ -49,7 +53,9 @@ class DFA:
                 try:
                     dataset = numpy.loadtxt(dataset)
                 except OSError:
-                    error_str = "\n    The file either doesn't exit or you use wrong path!"
+                    error_str = (
+                        "\n    The file either doesn't exit or you use wrong path!"
+                    )
                     raise NameError(error_str)
 
                 if numpy.size(dataset) == 0:
@@ -93,8 +99,10 @@ class DFA:
                     error_str = "\n    Wrong input vectors in input matrix! (They are probably too short)"
                     raise NameError(error_str)
                 if numpy.size(log_s_max) < 1:
-                    error_str = "\n   Vectors in your input array are too short! Use longer vectors " \
-                                "(it usually requires 20 or more samples) or transpose!"
+                    error_str = (
+                        "\n   Vectors in your input array are too short! Use longer vectors "
+                        "(it usually requires 20 or more samples) or transpose!"
+                    )
                     raise NameError(error_str)
 
     @staticmethod
@@ -173,43 +181,81 @@ class DFA:
             error_str = "\n    Non-linear approximation is non supported yet!"
             raise NameError(error_str)
 
-    def parallel_2d(self, threads=cpu_count(), progress_bar=False, h_control=False, h_target=float(), h_limit=float()):
+    def parallel_2d(
+        self,
+        threads=cpu_count(),
+        progress_bar=False,
+        h_control=False,
+        h_target=float(),
+        h_limit=float(),
+    ):
         if threads == 1 or self.dataset.ndim == 1:
             return self.find_h()
 
         if len(self.dataset) / threads < 1:
-            error_str = "\n    DFA Warning: Input array is too small for using it in parallel mode!" \
-                        f"\n    You better use either less threads ({len(self.dataset)}) or don't use " \
-                        f"parallel mode at all!"
+            error_str = (
+                "\n    DFA Warning: Input array is too small for using it in parallel mode!"
+                f"\n    You better use either less threads ({len(self.dataset)}) or don't use "
+                f"parallel mode at all!"
+            )
             print(error_str)
             h_est = self.find_h()
             return h_est
 
         if len(self.dataset) / threads < 10:
-            error_str = "\n    DFA Warning: It may be not  so effective when using parallel mode with such small array!" \
-                        "\n    Spawning processes creates its own overhead!"
+            error_str = (
+                "\n    DFA Warning: It may be not  so effective when using parallel mode with such small array!"
+                "\n    Spawning processes creates its own overhead!"
+            )
             print(error_str)
 
-        vectors_indices_by_threads = numpy.array_split(numpy.linspace(0, len(self.dataset) - 1, len(self.dataset),
-                                                                      dtype=int), threads)
+        vectors_indices_by_threads = numpy.array_split(
+            numpy.linspace(0, len(self.dataset) - 1, len(self.dataset), dtype=int),
+            threads,
+        )
 
         dataset_to_memory = Array(c_double, len(self.dataset) * len(self.dataset[0]))
         h_estimation_in_memory = Array(c_double, len(self.dataset))
-        numpy.copyto(numpy.frombuffer(dataset_to_memory.get_obj()).reshape((len(self.dataset), len(self.dataset[0]))),
-                     self.dataset)
+        numpy.copyto(
+            numpy.frombuffer(dataset_to_memory.get_obj()).reshape(
+                (len(self.dataset), len(self.dataset[0]))
+            ),
+            self.dataset,
+        )
 
-        shared_counter = Value('i', 0)
+        shared_counter = Value("i", 0)
         shared_lock = Lock()
 
         if progress_bar:
-            bar_thread = Thread(target=bar_manager, args=(f"DFA", len(self.dataset), shared_counter, shared_lock))
+            bar_thread = Thread(
+                target=bar_manager,
+                args=(f"DFA", len(self.dataset), shared_counter, shared_lock),
+            )
             bar_thread.start()
 
-        with closing(Pool(processes=threads, initializer=self.initializer_for_parallel_mod, initargs=
-        (dataset_to_memory, h_estimation_in_memory, shared_counter, shared_lock))) as pool:
-            invalid_i = pool.map(partial(self.parallel_core, quantity=len(self.dataset), length=len(self.dataset[0]),
-                                         h_control=h_control, h_target=h_target, h_limit=h_limit),
-                                 vectors_indices_by_threads)
+        with closing(
+            Pool(
+                processes=threads,
+                initializer=self.initializer_for_parallel_mod,
+                initargs=(
+                    dataset_to_memory,
+                    h_estimation_in_memory,
+                    shared_counter,
+                    shared_lock,
+                ),
+            )
+        ) as pool:
+            invalid_i = pool.map(
+                partial(
+                    self.parallel_core,
+                    quantity=len(self.dataset),
+                    length=len(self.dataset[0]),
+                    h_control=h_control,
+                    h_target=h_target,
+                    h_limit=h_limit,
+                ),
+                vectors_indices_by_threads,
+            )
 
         if h_control:
             invalid_i = numpy.concatenate(invalid_i)
@@ -221,7 +267,9 @@ class DFA:
 
         invalid_i = []
         for i in indices:
-            vector = numpy.frombuffer(datasets_array.get_obj()).reshape((quantity, length))[i]
+            vector = numpy.frombuffer(datasets_array.get_obj()).reshape(
+                (quantity, length)
+            )[i]
             x_ax, y_ax = self.dfa_core_cycle(vector, self.degree, self.root)
             lin_reg = numpy.polyfit(x_ax, y_ax, deg=1)[0]
             numpy.frombuffer(estimations.get_obj())[i] = lin_reg

@@ -1,17 +1,20 @@
+from ctypes import c_double
 from functools import partial
+from math import floor
+from random import gauss
 from typing import Optional
 
-from numpy import uint8, array, max, min, ndarray, zeros
-from numpy.random import randn
-from math import floor
-from ctypes import c_double
-from StatTools.auxiliary import SharedBuffer
-from random import gauss
 from C_StatTools import fbm_core
+from numpy import array, max, min, ndarray, uint8, zeros
+from numpy.random import randn
+
+from StatTools.auxiliary import SharedBuffer
 
 
 def add_h_values(vector: ndarray, k: int, h: float):
-    return array([v + (pow(0.5, k * (h - 1)) * gauss(0, 1)) if v != 0 else 0 for v in vector])
+    return array(
+        [v + (pow(0.5, k * (h - 1)) * gauss(0, 1)) if v != 0 else 0 for v in vector]
+    )
 
 
 def quant_array(vector: ndarray, min_val: float, max_val: float):
@@ -24,14 +27,14 @@ def fb_motion_python(h: float, field_size: int):
     This is the algorithm. It need C version for sure.
     """
 
-    n = 2 ** field_size + 1
+    n = 2**field_size + 1
     shape = n, n
 
     F = SharedBuffer(shape, c_double)
 
     F[0, 0], F[0, -1], F[-1, 0], F[-1, -1] = randn(4)
     for k in range(1, field_size + 1):
-        m = 2 ** k
+        m = 2**k
 
         fl = floor(n / m)
 
@@ -60,14 +63,18 @@ def fb_motion_python(h: float, field_size: int):
 
     max_val = max(F.to_array())
     min_val = min(F.to_array())
-    F.apply_in_place(func=partial(quant_array, min_val=min_val, max_val=max_val), by_1st_dim=True)
+    F.apply_in_place(
+        func=partial(quant_array, min_val=min_val, max_val=max_val), by_1st_dim=True
+    )
 
     z = array(F.to_array(), dtype=uint8)
     return z
 
 
 # @profile
-def fb_motion(h: float, field_size: int, filter_mine: Optional[ndarray] = None) -> ndarray:
+def fb_motion(
+    h: float, field_size: int, filter_mine: Optional[ndarray] = None
+) -> ndarray:
     """
     This is the same algorithm as fb_motion_python but with C compiled core.
     In average you can get up to 10x performance boost using this version
@@ -90,7 +97,7 @@ def fb_motion(h: float, field_size: int, filter_mine: Optional[ndarray] = None) 
     """
 
     if filter_mine is None:
-        n = 2 ** field_size + 1
+        n = 2**field_size + 1
         zeros_arr = zeros((n, n), dtype=float)
         fbm_core(zeros_arr, h, field_size)
         return zeros_arr.astype(uint8)
@@ -100,12 +107,14 @@ def fb_motion(h: float, field_size: int, filter_mine: Optional[ndarray] = None) 
         if filter_mine.ndim == 1 or shape[0] != shape[1]:
             raise ValueError("Cannot process such input array!")
         if 2**field_size > shape[0]:
-            raise ValueError("2^degree > input array shape. You either use less or equal.")
+            raise ValueError(
+                "2^degree > input array shape. You either use less or equal."
+            )
         fbm_core(filter_mine, h, field_size)
         return filter_mine.astype(uint8)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # t1 = time.perf_counter()
     # r = FBMotion_python(1.6, 10)
     # print(f"Took: {time.perf_counter() - t1}")

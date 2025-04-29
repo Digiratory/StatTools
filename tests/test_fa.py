@@ -1,9 +1,9 @@
-import pytest
-
 import numpy as np
+import pytest
 from scipy import signal, stats
 
 from StatTools.analysis import fa
+
 testdata = [
     (0.25),
     (0.5),
@@ -14,21 +14,21 @@ testdata = [
 
 @pytest.fixture(scope="module")
 def sample_signal():
-    """ Generate sample signal using Kasdin method
+    """Generate sample signal using Kasdin method
 
     Returns:
         Dict[float:np.ndarray]: Dict of sample signals with requested H
     """
-    length = 2 ** 14
+    length = 2**14
     signals = {}
     for h in testdata:
-        z = np.random.normal(size=length*2)
+        z = np.random.normal(size=length * 2)
         beta = 2 * h - 1
-        L = length*2
-        A = np.zeros(length*2)
+        L = length * 2
+        A = np.zeros(length * 2)
         A[0] = 1
         for k in range(1, L):
-            A[k] = (k - 1 - beta/2) * A[k - 1] / k
+            A[k] = (k - 1 - beta / 2) * A[k - 1] / k
 
         if h == 0.5:
             Z = z
@@ -40,9 +40,9 @@ def sample_signal():
 
 
 def test_fa_default_gaussian_noise():
-    s = [2 ** i for i in range(3, 20)]
+    s = [2**i for i in range(3, 20)]
     step = 0.01
-    length = 2 ** 16
+    length = 2**16
     sig = np.random.standard_normal(length)
 
     f1, s1 = fa(sig, step, s, n_integral=1)
@@ -60,7 +60,7 @@ def test_fa_default_gaussian_noise():
 
 @pytest.mark.parametrize("h", testdata)
 def test_fa_default(sample_signal, h):
-    s = [2 ** i for i in range(3, 20)]
+    s = [2**i for i in range(3, 20)]
     step = 0.01
     sig = sample_signal[h]
 
@@ -73,7 +73,7 @@ def test_fa_default(sample_signal, h):
 
 @pytest.mark.parametrize("h", testdata)
 def test_fa_default_multiple_signals(sample_signal, h):
-    s = [2 ** i for i in range(3, 20)]
+    s = [2**i for i in range(3, 20)]
     step = 0.01
     sig = sample_signal[h]
     sig = np.repeat(sig[np.newaxis, :], repeats=10, axis=0)

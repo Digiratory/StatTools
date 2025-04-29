@@ -1,19 +1,38 @@
+import gc
 from collections.abc import Iterable
+from contextlib import closing
 from ctypes import c_double
 from functools import partial
 from multiprocessing import Pool
-from numpy import array, ndarray, array_split, arange, polyfit, polyval, zeros, mean, sqrt, \
-    cumsum, concatenate
-from numpy.linalg import inv
 from typing import Union
-from contextlib import closing
+
+from numpy import (
+    arange,
+    array,
+    array_split,
+    concatenate,
+    cumsum,
+    mean,
+    ndarray,
+    polyfit,
+    polyval,
+    sqrt,
+    zeros,
+)
+from numpy.linalg import inv
+
 from StatTools.auxiliary import SharedBuffer
-import gc
 
 
 class DPCCA:
 
-    def __init__(self, arr: Union[ndarray, SharedBuffer], pd: int, step: float, s: Union[int, Iterable]):
+    def __init__(
+        self,
+        arr: Union[ndarray, SharedBuffer],
+        pd: int,
+        step: float,
+        s: Union[int, Iterable],
+    ):
 
         if isinstance(arr, ndarray):
             self.arr = [arr] if arr.ndim == 1 else arr
@@ -34,7 +53,9 @@ class DPCCA:
 
             s = list(filter(lambda x: x <= self.shape[1] / 4, self.s))
             if len(s) < 1:
-                raise ValueError("All input S values are larger than vector shape / 4 !")
+                raise ValueError(
+                    "All input S values are larger than vector shape / 4 !"
+                )
 
             if len(s) != init_s_len:
                 print(f"\tDPCAA warning: only following S values are in use: {s}")
@@ -55,21 +76,34 @@ class DPCCA:
             elif isinstance(self.arr, SharedBuffer):
                 self.arr.apply_in_place(cumsum, by_1st_dim=True)
 
-            with (closing(Pool(processes=processes, initializer=self.arr.buffer_init,
-                               initargs=({'ARR': self.arr},)))) as pool:
-                result = pool.map(partial(self._dpcca_worker, force_gc=force_gc), S_by_workers)
+            with closing(
+                Pool(
+                    processes=processes,
+                    initializer=self.arr.buffer_init,
+                    initargs=({"ARR": self.arr},),
+                )
+            ) as pool:
+                result = pool.map(
+                    partial(self._dpcca_worker, force_gc=force_gc), S_by_workers
+                )
 
         elif isinstance(self.s, int):
             if self.s > self.shape[1] / 4:
                 raise ValueError("Cannot use S > L / 4")
         else:
-            raise TypeError("Input S values could be : int, tuple, list or numpy.ndarray!")
+            raise TypeError(
+                "Input S values could be : int, tuple, list or numpy.ndarray!"
+            )
 
     def _dpcca_worker(self, s: Union[int, Iterable], force_gc: Union[bool, tuple]):
 
         s_current = [s] if not isinstance(s, Iterable) else s
 
-        cumsum_arr = SharedBuffer.get("ARR") if isinstance(self.arr, SharedBuffer) else cumsum(self.arr, axis=1)
+        cumsum_arr = (
+            SharedBuffer.get("ARR")
+            if isinstance(self.arr, SharedBuffer)
+            else cumsum(self.arr, axis=1)
+        )
 
         shape = self.arr.shape
 
@@ -85,7 +119,7 @@ class DPCCA:
 
             for n in range(cumsum_arr.shape[0]):
                 for v_i, v in enumerate(V):
-                    W = cumsum_arr[n][v:v + s_val]
+                    W = cumsum_arr[n][v : v + s_val]
                     if len(W) == 0:
                         print(f"\tFor s = {s_val} W is an empty slice!")
                         return P, R, F
@@ -115,7 +149,9 @@ class DPCCA:
             for n in range(shape[0]):
                 for m in range(n + 1):
                     if Cinv[n][n] * Cinv[m][m] < 0:
-                        print(f"S = {s_val} | Error: Sqrt(-1)! No P array values for this S!")
+                        print(
+                            f"S = {s_val} | Error: Sqrt(-1)! No P array values for this S!"
+                        )
                         break
 
                     P[s_i][n][m] = -Cinv[n][m] / sqrt(Cinv[n][n] * Cinv[m][m])
@@ -125,4 +161,3 @@ class DPCCA:
                 break
 
         return P, R, F
-

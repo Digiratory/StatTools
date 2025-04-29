@@ -26,17 +26,34 @@
 # ---------------------------------------------------------------------------------------
 
 
-from multiprocessing.process import current_process
-import numpy
-from numpy.random.mtrand import normal
 from functools import partial
-from math import log, ceil
-from multiprocessing import cpu_count, Pool
+from math import ceil, log
+from multiprocessing import Pool, cpu_count
 from multiprocessing.dummy import freeze_support
+from multiprocessing.process import current_process
+
+import numpy
 from numba import njit
-from numpy import zeros, linspace, size, array, array_split, real, imag, kron, meshgrid, sqrt, gradient, savetxt, \
-    zeros_like, min, max, full
+from numpy import (
+    array,
+    array_split,
+    full,
+    gradient,
+    imag,
+    kron,
+    linspace,
+    max,
+    meshgrid,
+    min,
+    real,
+    savetxt,
+    size,
+    sqrt,
+    zeros,
+    zeros_like,
+)
 from numpy.fft import fft2
+from numpy.random.mtrand import normal
 from tqdm import tqdm
 
 
@@ -69,7 +86,12 @@ def square_array_cycle(processing_line, x_axis, y_axis, R, H, input_array):
         for y in range(size(y_axis)):
             x1 = [x_axis[x], y_axis[y]]
             x2 = [x_axis[0], y_axis[0]]
-            core_result = core(array([x_axis[x], y_axis[y]]), array([x_axis[0], y_axis[0]]), R=R, alpha=2 * H)
+            core_result = core(
+                array([x_axis[x], y_axis[y]]),
+                array([x_axis[0], y_axis[0]]),
+                R=R,
+                alpha=2 * H,
+            )
             square[y][x] = core_result[0]
     return square
 
@@ -88,7 +110,7 @@ def corner_reflector(input_array):
         num = 2
         for row in range(len(input_array) - 2, 0, -1):
             row_line = input_array[row]
-            output[row+num][0:len(row_line)] = input_array[row]
+            output[row + num][0 : len(row_line)] = input_array[row]
             num = num + 2
 
         num = 2
@@ -110,7 +132,9 @@ def corner_reflector(input_array):
 
         return output
 
-    x = array([[1, 2, 3, 44], [4, 5, 6, 77], [7, 8, 9, 99], [10, 11, 12, 13]], dtype=float)
+    x = array(
+        [[1, 2, 3, 44], [4, 5, 6, 77], [7, 8, 9, 99], [10, 11, 12, 13]], dtype=float
+    )
     big = 2 * size(x, axis=0) - 2
     zeros_array = zeros((big, big), dtype=float)
     compile_C = corner_reflector_C(x, zeros_array)
@@ -121,6 +145,7 @@ def corner_reflector(input_array):
 
     return result
 
+
 @njit(cache=True)
 def crop_out(input_array, cropped, given_length, given_width):
 
@@ -130,7 +155,16 @@ def crop_out(input_array, cropped, given_length, given_width):
 
     return cropped
 
-def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, progress_bar=False):
+
+def fields(
+    H,
+    length,
+    comments=False,
+    R=2,
+    parallel=False,
+    return_axises=False,
+    progress_bar=False,
+):
     if progress_bar:
         if not parallel:
             try:
@@ -163,7 +197,17 @@ def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, 
         if comments:
             print("Started parallel processing . . .")
         pool = Pool(processes=cpu_to_use)
-        result = pool.map(partial(square_array_cycle, y_axis=y_axis, R=R, H=H, input_array=square, x_axis=x_axis), line)
+        result = pool.map(
+            partial(
+                square_array_cycle,
+                y_axis=y_axis,
+                R=R,
+                H=H,
+                input_array=square,
+                x_axis=x_axis,
+            ),
+            line,
+        )
         pool.terminate()
 
         num_part = 0
@@ -198,8 +242,8 @@ def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, 
     if comments:
         print("LAM processing has been started . . . ")
 
-    numpy.seterr(all='raise')
-    savetxt('h_1_zeros.txt', corner_reflected)
+    numpy.seterr(all="raise")
+    savetxt("h_1_zeros.txt", corner_reflected)
     lam = real(fft2(corner_reflected)) / (4 * (width - 1) * (length - 1))
     try:
         lam = sqrt(lam)
@@ -207,18 +251,24 @@ def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, 
         if max(corner_reflected) < 0.00001 and abs(min(corner_reflected)) < 0.00001:
             lam = zeros_like(corner_reflected)
         else:
-            raise NameError("\n--> LAM problem: max and min are more substantial than 0.00001 . . .")
+            raise NameError(
+                "\n--> LAM problem: max and min are more substantial than 0.00001 . . ."
+            )
     if progress_bar:
         bar.update()
 
     corner_reflected = None
 
     @njit(cache=True)
-    def complex_multiplier(input_array, real_random_array, image_random_array, empty_array):
+    def complex_multiplier(
+        input_array, real_random_array, image_random_array, empty_array
+    ):
 
         for k1 in range(len(empty_array)):
             for k2 in range(empty_array[0].size):
-                empty_array[k1][k2] = complex(real_random_array[k1][k2], image_random_array[k1][k2])
+                empty_array[k1][k2] = complex(
+                    real_random_array[k1][k2], image_random_array[k1][k2]
+                )
 
         return input_array * empty_array
 
@@ -244,7 +294,7 @@ def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, 
         bar.update()
     F = crop_out(F, zeros((length, width), dtype=complex), length, width)
 
-    core_result = core(array([0, 0]), array([0, 0]), R=2, alpha=2*H)
+    core_result = core(array([0, 0]), array([0, 0]), R=2, alpha=2 * H)
     c2 = core_result[2]
 
     field1 = real(F)
@@ -264,7 +314,6 @@ def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, 
     field2 = field2 + kron(y_new, x_new) * sqrt(2 * c2)
 
     X, Y = meshgrid(x_axis, y_axis)
-
 
     """def cut_out_the_disk(input_array, grid, nan_count=False):
         field = input_array
@@ -308,10 +357,24 @@ def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, 
     field1 = cut_out_the_disk(field1, grid, nan_array)
     field2 = cut_out_the_disk(field2, grid, nan_array)
     grid = None
-    field1 = crop_out(field1, zeros((int(length/2), int(width/2))), int(length / 2), int(width / 2))
-    field2 = crop_out(field2, zeros((int(length / 2), int(width / 2))), int(length / 2), int(width / 2))
-    X = crop_out(X, zeros((int(length / 2), int(width / 2))), int(length / 2), int(width / 2))
-    Y = crop_out(Y, zeros((int(length / 2), int(width / 2))), int(length / 2), int(width / 2))
+    field1 = crop_out(
+        field1,
+        zeros((int(length / 2), int(width / 2))),
+        int(length / 2),
+        int(width / 2),
+    )
+    field2 = crop_out(
+        field2,
+        zeros((int(length / 2), int(width / 2))),
+        int(length / 2),
+        int(width / 2),
+    )
+    X = crop_out(
+        X, zeros((int(length / 2), int(width / 2))), int(length / 2), int(width / 2)
+    )
+    Y = crop_out(
+        Y, zeros((int(length / 2), int(width / 2))), int(length / 2), int(width / 2)
+    )
     if progress_bar:
         bar.update()
 
@@ -322,8 +385,19 @@ def fields(H, length, comments=False, R=2, parallel=False, return_axises=False, 
     else:
         return [field1, field2]
 
-def start(H, quantity, length, fields_length=0, parallel=False, comments=False, R=2,
-          fast_fields=True, return_axises=False, progress_bar=False):
+
+def start(
+    H,
+    quantity,
+    length,
+    fields_length=0,
+    parallel=False,
+    comments=False,
+    R=2,
+    fast_fields=True,
+    return_axises=False,
+    progress_bar=False,
+):
 
     def parameters_handler(quantity, length, fields_length, comments, fast_fields):
         sufficient_field_size = int(sqrt(pow(quantity, 2) + pow(length, 2))) * 2
@@ -338,21 +412,29 @@ def start(H, quantity, length, fields_length=0, parallel=False, comments=False, 
             try:
                 max_num_real = int(sqrt(pow((fields_length / 2), 2) - pow(length, 2)))
             except:
-                raise NameError(f"\n---> Field size is way smaller than given length . . .")
+                raise NameError(
+                    f"\n---> Field size is way smaller than given length . . ."
+                )
 
             if max_num_real < quantity:
-                print("With given quantity and length, algo wouldn't be able to extract your matrix out of the unit disk . . ."
-                      f"\nMax number of realizations with length of {length} is {max_num_real}")
-                raise NameError("\nWith given quantity and length, algo wouldn't be able to extract your matrix out of the unit disk . . ."
-                                f"\nMax number of realizations with length of {length} is {max_num_real}"
-                                f"\n---> Field is not big enough to fit desired group of realizations!")
+                print(
+                    "With given quantity and length, algo wouldn't be able to extract your matrix out of the unit disk . . ."
+                    f"\nMax number of realizations with length of {length} is {max_num_real}"
+                )
+                raise NameError(
+                    "\nWith given quantity and length, algo wouldn't be able to extract your matrix out of the unit disk . . ."
+                    f"\nMax number of realizations with length of {length} is {max_num_real}"
+                    f"\n---> Field is not big enough to fit desired group of realizations!"
+                )
             else:
 
                 if comments and not fast_fields:
                     if sufficient_field_size < fields_length:
-                        print(f"->You can use smaller field to find your set of realizations: field_length = {sufficient_field_size} is enough"
-                              f"\n->{sufficient_field_size} transforms into : 2^(ceil(log({sufficient_field_size}, 2))) = {log_found}"
-                              f"\n->Use field_generator.start( . . . , fast_fields=True) to perform operations faster.")
+                        print(
+                            f"->You can use smaller field to find your set of realizations: field_length = {sufficient_field_size} is enough"
+                            f"\n->{sufficient_field_size} transforms into : 2^(ceil(log({sufficient_field_size}, 2))) = {log_found}"
+                            f"\n->Use field_generator.start( . . . , fast_fields=True) to perform operations faster."
+                        )
 
                 return fields_length
         else:
@@ -361,16 +443,34 @@ def start(H, quantity, length, fields_length=0, parallel=False, comments=False, 
                     print(f"Field's sizes are going to be {log_found} x {log_found}")
                 return log_found
             else:
-                raise NameError(f"\n---> You need to either set size of fields or to use fast_fields=True!")
+                raise NameError(
+                    f"\n---> You need to either set size of fields or to use fast_fields=True!"
+                )
 
-    fields_length = parameters_handler(quantity, length, fields_length, comments, fast_fields)
+    fields_length = parameters_handler(
+        quantity, length, fields_length, comments, fast_fields
+    )
 
     if H > 1:
-        res = fields(H=H - 1, length=fields_length, comments=comments, R=R, parallel=parallel,
-                     return_axises=return_axises, progress_bar=progress_bar)
+        res = fields(
+            H=H - 1,
+            length=fields_length,
+            comments=comments,
+            R=R,
+            parallel=parallel,
+            return_axises=return_axises,
+            progress_bar=progress_bar,
+        )
     else:
-        res = fields(H=H, length=fields_length, comments=comments, R=R, parallel=parallel,
-                     return_axises=return_axises, progress_bar=progress_bar)
+        res = fields(
+            H=H,
+            length=fields_length,
+            comments=comments,
+            R=R,
+            parallel=parallel,
+            return_axises=return_axises,
+            progress_bar=progress_bar,
+        )
     field1 = crop_out(res[0], zeros((quantity, length), dtype=float), quantity, length)
     field2 = crop_out(res[1], zeros((quantity, length), dtype=float), quantity, length)
 
@@ -393,7 +493,8 @@ def start(H, quantity, length, fields_length=0, parallel=False, comments=False, 
     else:
         return [field1, field2]
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     freeze_support()
     print("Use field_generator.start() for full processing . . .")
     ret = start(1.3, 1000, 1440, parallel=True, comments=True, return_axises=True)
