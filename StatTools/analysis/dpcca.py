@@ -6,6 +6,7 @@ from functools import partial
 from multiprocessing import Pool
 from typing import Union
 
+import numpy as np
 from numpy import (
     arange,
     array,
@@ -161,33 +162,47 @@ def dpcca(
     processes: int = 1,
     buffer: Union[bool, SharedBuffer] = False,
     gc_params: tuple = None,
-    short_vectors=False,
-    n_integral=1,
-) -> tuple:
-    """
-    Detrended Partial-Cross-Correlation Analysis : https://www.nature.com/articles/srep08143
-
-    arr: dataset array
-    pd: polynomial degree
-    step: share of S - value. It's set usually as 0.5. The integer part of the number will be taken
-    s : points where  fluctuation function F(s) is calculated. More on that in the article.
-    process: num of workers to spawn
-    buffer: allows to share input array between processes. NOTE: if you
-
-    Returns 3 3-d matrices where first dimension represents given S-value.
-
-    P,
-    R,
-    F — F^2
-    s — Used scales
+    short_vectors: bool = False,
+    n_integral: int = 1,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Implementation of the Detrended Partial-Cross-Correlation Analysis method proposed by Yuan, N. et al.[1]
 
     Basic usage:
         You can get whole F(s) function for first vector as:
-
+        ```python
             s_vals = [i**2 for i in range(1, 5)]
-            P, R, F = dpcaa(input_array, 2, 0.5, s_vals, len(s_vals))
+            P, R, F, S = dpcaa(input_array, 2, 0.5, s_vals, len(s_vals))
             fluct_func = [F[s][0][0] for s in s_vals]
+        ```
+    [1] Yuan, N., Fu, Z., Zhang, H. et al. Detrended Partial-Cross-Correlation Analysis:
+        A New Method for Analyzing Correlations in Complex System. Sci Rep 5, 8143 (2015).
+        https://doi.org/10.1038/srep08143
 
+    Args:
+        arr (ndarray): dataset array
+        pd (int): polynomial degree
+        step (float): share of S - value. It's set usually as 0.5. The integer part of the number will be taken
+        s (Union[int, Iterable]): points where  fluctuation function F(s) is calculated. More on that in the article.
+        processes (int, optional): num of workers to spawn. Defaults to 1.
+        buffer (Union[bool, SharedBuffer], optional): allows to share input array between processes. Defaults to False.
+        gc_params (tuple, optional): _description_. Defaults to None.
+        short_vectors (bool, optional): _description_. Defaults to False.
+        n_integral (int, optional): Number of cumsum operation before computation. Defaults to 1.
+
+    Raises:
+        ValueError: All input S values are larger than vector shape / 4.
+        ValueError: Cannot use S > L / 4.
+        ValueError: Wrong type of input buffer, if buffer is not SharedBuffer
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: [P, R, F^2, S], where
+            P is a partial cross-correlation levels on different time scales, coefficients can be used
+                to characterize the `intrinsic` relations between the two time series on time scales of S.
+            R is a coefficients matrix represents the level of cross-correlation on time scales of S.
+                However, it should be noted that it only shows the relations between two time series.
+                This may provide spurious correlation information if the two time series are both correlated with other signals.
+            F^2 is a covariance matrix (covariance between any two residuals on each scale),
+            S is used scales.
     """
     if short_vectors:
         return dpcca_worker(
