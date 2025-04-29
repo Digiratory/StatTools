@@ -2,6 +2,9 @@
 
 ## 1.9.0
 
+* [GH-13](https://github.com/Digiratory/StatTools/issues/13) fix: posible unbalances tuple unpacking from method dpcca.
+* [GH-13](https://github.com/Digiratory/StatTools/issues/13) docs: update documentation for dpcca method.
+* [GH-13](https://github.com/Digiratory/StatTools/issues/13) refactor: update code for dpcca method to improve performance and readability.
 * [GH-18](https://github.com/Digiratory/StatTools/issues/18) feat: Enhanced Kalman filter with auto calculation of transition matrix and measurement covariance matrix based on Kasdin model.
 * [GH-18](https://github.com/Digiratory/StatTools/issues/18) fix: Add normalization to the Kasdin generator.
 
