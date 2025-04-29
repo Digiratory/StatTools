@@ -1,72 +1,94 @@
 import numpy as np
 from filterpy.kalman import KalmanFilter
+from numpy.typing import NDArray
+
+from StatTools.analysis.dfa import DFA
+from StatTools.generators.kasdin_generator import KasdinGenerator
 
 
 class EnhancedKalmanFilter(KalmanFilter):
     """
-    Advanced Kalman filter with methods for automatic calculation
-    covariance matrices of the process (Q) and measurements (R).
+    Advanced Kalman filter based on filterpy.kalman.KalmanFilter
+    with methods for automatic calculation of transition matrix (F)
+    and measurement covariance matrix (R).
     """
 
-    def get_Q(self, signal: np.array, dt: float) -> np.array:
-        """
-        Calculates the process covariance matrix (Q) for the Kalman filter.
-
-        Parameters:
-            signal (np.array): Input signal (observations)
-            dt (float): Time interval between measurements
-
-        Returns:
-            np.array: A 2x2 process covariance matrix Q
-        """
-        velocity = np.diff(signal)
-        accelerations = np.diff(velocity)
-        sigma_a_squared = np.nanvar(accelerations)
-        return np.array([[dt**4 / 4, dt**3 / 2], [dt**3 / 2, dt**2]]) * sigma_a_squared
-
-    def get_R(self, signal: np.array) -> np.array:
+    def get_R(self, signal: NDArray[np.float64]) -> NDArray[np.float64]:
         """
         Calculates the measurement covariance matrix (R) for the Kalman filter.
 
         Parameters:
-            signal (np.array): Input signal (observations)
+            signal (NDArray[np.float64]): Input signal (noise)
 
         Returns:
-            np.array: A 1x1 dimension covariance matrix R
+            NDArray[np.float64]: A 1x1 dimension covariance matrix R
         """
-        signal = np.diff(signal)
-        return np.array([[np.nanvar(signal)]])
+        return np.std(signal) ** 2
 
-    def get_F(self, ar_v: np.array) -> np.array:
+    def _get_filter_coefficients(
+        self, signal: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
+        """Helper method to get filter coefficients."""
+        dfa = DFA(signal)
+        h = dfa.find_h()
+        generator = KasdinGenerator(h, length=signal.shape[0])
+        return generator.get_filter_coefficients()
+
+    def get_F(
+        self, signal: NDArray[np.float64], dt: float, order: int = 2
+    ) -> NDArray[np.float64]:
         """
-        Calculates the F for the Kalman filter.
+        Calculates the transition matrix F for the Kalman filter.
 
         Parameters:
-            ar_v (np.array): Autoregressive filter coefficients
+            signal (NDArray[np.float64]): Input signal
+            dt (float): Time step
+            order (int): Order of the filter
 
         Returns:
-            np.array: matrix F
-        """
-        # matrix = np.zeros((self.dim_x, self.dim_x))
-        if self.dim_x != 3 or ar_v is None:
-            print("Use simple matrix")
-            return np.eye(self.dim_x)
-        matrix = [
-            [-ar_v[0] - ar_v[1] - ar_v[2], ar_v[1] + 2 * ar_v[2], -ar_v[2]],
-            [-1 - ar_v[0] - ar_v[1] - ar_v[2], ar_v[1] + 2 * ar_v[2], -ar_v[2]],
-            [-1 - ar_v[0] - ar_v[1] - ar_v[2], -1 + ar_v[1] + 2 * ar_v[2], -ar_v[2]],
-        ]
-        return np.array(matrix)
+            NDArray[np.float64]: transition matrix F
 
-    def auto_configure(self, signal: np.array, dt: float, ar_vector: np.array = None):
+        Raises:
+            ValueError: If the filter order is not supported
+                        (only orders 1, 2, 3 are currently implemented)
         """
-        Automatically adjusts Q, R, F based on the input data.
+        dfa = DFA(signal)
+        h = dfa.find_h()
+        generator = KasdinGenerator(h, length=signal.shape[0])
+        A = generator.get_filter_coefficients()
+        if order == 1:
+            return np.array([[1, dt], [0, 1]])
+        if order == 2:
+            return np.array(
+                [[-A[1] - A[2], A[2] * dt], [(-1 - A[1] - A[2]) / dt, A[2]]]
+            )
+        # TODO: add dt for order 3
+        if order == 3:
+            return np.array(
+                [
+                    [-A[1] - A[2] - A[3], A[2] + 2 * A[3], -A[3]],
+                    [-1 - A[1] - A[2] - A[3], A[2] + 2 * A[3], -A[3]],
+                    [-1 - A[1] - A[2] - A[3], -1 + A[2] + 2 * A[3], -A[3]],
+                ]
+            )
+        raise ValueError(f"Order {order} is not supported")
+
+    def auto_configure(
+        self,
+        signal: NDArray[np.float64],
+        noise: NDArray[np.float64],
+        dt: float,
+        order: int = 2,
+    ):
+        """
+        Automatically adjusts R, F based on the input data.
 
         Parameters:
-            signal (np.array): Input signal (observations)
+            signal (NDArray[np.float64]): Original signal
+            noise (NDArray[np.float64]): Noise signal
             dt (float): Time interval between measurements
-            ar_vector(np.array): Autoregressive filter coefficients
+            ar_vector(NDArray[np.float64]): Autoregressive filter coefficients
         """
-        self.Q = self.get_Q(signal, dt)
-        self.R = self.get_R(signal)
-        self.F = self.get_F(ar_vector)
+        # TODO: add Q matrix auto configuration
+        self.R = self.get_R(noise)
+        self.F = self.get_F(signal, dt, order)
