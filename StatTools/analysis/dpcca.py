@@ -199,7 +199,7 @@ def dpcca(
             gc_params=gc_params,
             short_vectors=True,
             n_integral=n_integral,
-        )
+        ) + (s,)
 
     concatenate_all = False  # concatenate if 1d array , no need to use 3d P, R, F
     if arr.ndim == 1:
