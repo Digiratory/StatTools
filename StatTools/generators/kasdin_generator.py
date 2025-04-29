@@ -31,6 +31,7 @@ class KasdinGenerator:
         h: float,
         length: int,
         random_generator: Optional[Iterator[float]] = iter(np.random.randn, None),
+        normalize=True,
     ) -> None:
         if length is not None and length < 1:
             raise ValueError("Length must be more than 1")
@@ -50,6 +51,9 @@ class KasdinGenerator:
             islice(random_generator, self.length), dtype=np.float64
         )
         self.sequence = lfilter(1, self.filter_coefficients, random_sequence)
+        if normalize:
+            self.sequence -= np.mean(self.sequence)
+            self.sequence /= np.std(self.sequence)
         self.current_index = 0
 
     def get_filter_coefficients(self):
