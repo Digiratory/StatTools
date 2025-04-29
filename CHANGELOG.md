@@ -2,6 +2,7 @@
 ## 1.8.1
 
 * [GH-18](https://github.com/Digiratory/StatTools/issues/18) feat: Enhanced Kalman filter with auto calculation of transition matrix and measurement covariance matrix based on Kasdin model.
+* [GH-18](https://github.com/Digiratory/StatTools/issues/18) fix: Add normalization to the Kasdin generator.
 
 ## 1.7.1
 
