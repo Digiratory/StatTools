@@ -1,13 +1,24 @@
 import time
 from contextlib import closing
-from functools import partial
-from threading import Thread
-from numpy import array, frombuffer, copyto, ndarray, arange, linspace, array_split, zeros, round
-from numpy.random.mtrand import normal
 from ctypes import c_double
-from multiprocessing import Array, Pool, cpu_count, Value
-from tqdm import tqdm, TqdmWarning
+from functools import partial
+from multiprocessing import Array, Pool, Value, cpu_count
+from threading import Thread
+
 import C_StatTools
+from numpy import (
+    arange,
+    array,
+    array_split,
+    copyto,
+    frombuffer,
+    linspace,
+    ndarray,
+    round,
+    zeros,
+)
+from numpy.random.mtrand import normal
+from tqdm import TqdmWarning, tqdm
 
 
 class QSS:
@@ -46,10 +57,16 @@ class QSS:
 
     """
 
-    def __init__(self, data: (ndarray, tuple), u: (ndarray, list, tuple), threads=cpu_count(), progress_bar=True):
+    def __init__(
+        self,
+        data: (ndarray, tuple),
+        u: (ndarray, list, tuple),
+        threads=cpu_count(),
+        progress_bar=True,
+    ):
 
-        self._controller = Value('i', 0)
-        self._bar_val = Value('i', 0, lock=True)
+        self._controller = Value("i", 0)
+        self._bar_val = Value("i", 0, lock=True)
 
         if isinstance(u, (list, tuple)):
             u = array(u)
@@ -63,36 +80,78 @@ class QSS:
             self._input_shape = data
             self._output_shape = (self._input_shape[0], len(self.U))
 
-        self._shared_input = Array(c_double, self._input_shape[0] * self._input_shape[1], lock=True)
-        self._shared_output = Array(c_double, self._output_shape[0] * self._output_shape[1], lock=True)
+        self._shared_input = Array(
+            c_double, self._input_shape[0] * self._input_shape[1], lock=True
+        )
+        self._shared_output = Array(
+            c_double, self._output_shape[0] * self._output_shape[1], lock=True
+        )
         if isinstance(data, ndarray):
-            copyto(frombuffer(self._shared_input.get_obj(), dtype=c_double).reshape(self._input_shape), data)
+            copyto(
+                frombuffer(self._shared_input.get_obj(), dtype=c_double).reshape(
+                    self._input_shape
+                ),
+                data,
+            )
 
         self._threads, self._progress_bar = threads, progress_bar
 
         if self._threads > 1:
-            self._pool = Pool(processes=self._threads, initializer=self._global_init, initargs=(self._shared_input,
-                                                                                                self._shared_output,
-                                                                                                self._controller,
-                                                                                                self._bar_val))
+            self._pool = Pool(
+                processes=self._threads,
+                initializer=self._global_init,
+                initargs=(
+                    self._shared_input,
+                    self._shared_output,
+                    self._controller,
+                    self._bar_val,
+                ),
+            )
             if self._progress_bar:
-                Thread(target=self._bar_manager, args=(self._input_shape[0], self._bar_val)).start()
+                Thread(
+                    target=self._bar_manager, args=(self._input_shape[0], self._bar_val)
+                ).start()
 
     def compute_waiting(self, C0=None, multiple_runs=False):
 
-        indices = array_split(linspace(0, self._input_shape[0] - 1, self._input_shape[0], dtype=int), self._threads)
+        indices = array_split(
+            linspace(0, self._input_shape[0] - 1, self._input_shape[0], dtype=int),
+            self._threads,
+        )
 
         if self._threads == 1:
-            self._global_init(self._shared_input, self._shared_output, self._controller, self._bar_val)
-            self._worker(indices[0], C0, self.U, self._input_shape, self._output_shape, self._progress_bar, True)
+            self._global_init(
+                self._shared_input, self._shared_output, self._controller, self._bar_val
+            )
+            self._worker(
+                indices[0],
+                C0,
+                self.U,
+                self._input_shape,
+                self._output_shape,
+                self._progress_bar,
+                True,
+            )
             return self.get_result()
         else:
             if self._progress_bar:
                 self._bar_val.value = 0
-                Thread(target=self._bar_manager, args=(self._input_shape[0], self._bar_val)).start()
+                Thread(
+                    target=self._bar_manager, args=(self._input_shape[0], self._bar_val)
+                ).start()
 
-            self._pool.map_async(partial(self._worker, C0=C0, U=self.U, input_shape=self._input_shape,
-                                         output_shape=self._output_shape, bar_on=self._progress_bar, linear=False), indices)
+            self._pool.map_async(
+                partial(
+                    self._worker,
+                    C0=C0,
+                    U=self.U,
+                    input_shape=self._input_shape,
+                    output_shape=self._output_shape,
+                    bar_on=self._progress_bar,
+                    linear=False,
+                ),
+                indices,
+            )
 
             while True:
                 time.sleep(0.2)
@@ -107,20 +166,35 @@ class QSS:
         self._pool.terminate()
 
     def rewrite_array(self, arr):
-        copyto(frombuffer(self._shared_input.get_obj(), dtype=c_double).reshape(self._input_shape), arr)
-        copyto(frombuffer(self._shared_output.get_obj(), dtype=c_double).reshape(self._output_shape),
-               zeros(self._output_shape, dtype=float))
+        copyto(
+            frombuffer(self._shared_input.get_obj(), dtype=c_double).reshape(
+                self._input_shape
+            ),
+            arr,
+        )
+        copyto(
+            frombuffer(self._shared_output.get_obj(), dtype=c_double).reshape(
+                self._output_shape
+            ),
+            zeros(self._output_shape, dtype=float),
+        )
 
     def get_result(self):
-        return frombuffer(self._shared_output.get_obj(), dtype=c_double).reshape(self._output_shape)
+        return frombuffer(self._shared_output.get_obj(), dtype=c_double).reshape(
+            self._output_shape
+        )
 
     @staticmethod
     def _worker(indices, C0, U, input_shape, output_shape, bar_on, linear):
         def get_vector(i):
-            return frombuffer(SHARED_INPUT.get_obj(), dtype=c_double).reshape(input_shape)[i]
+            return frombuffer(SHARED_INPUT.get_obj(), dtype=c_double).reshape(
+                input_shape
+            )[i]
 
         def write_result_to_mem(i, vec):
-            frombuffer(SHARED_OUTPUT.get_obj(), dtype=c_double).reshape(output_shape)[i] = vec
+            frombuffer(SHARED_OUTPUT.get_obj(), dtype=c_double).reshape(output_shape)[
+                i
+            ] = vec
 
         bar = None
 
@@ -184,7 +258,7 @@ class QSS:
                 return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     shape = (1200, 1440)
 

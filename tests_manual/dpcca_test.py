@@ -2,25 +2,26 @@ import ctypes
 import time
 
 from numpy.random import normal
-from StatTools.analysis.dpcca import dpcca, movmean
-from StatTools.generators.base_filter import Filter
-from StatTools.auxiliary import SharedBuffer
 
+from StatTools.analysis.dpcca import dpcca, movmean
+from StatTools.auxiliary import SharedBuffer
+from StatTools.generators.base_filter import Filter
 
 
 def run_to_compare_with_matlab():
     h = 1.5
-    length = 2 ** 20
-    s = [2 ** i for i in range(3, 20)]
+    length = 2**20
+    s = [2**i for i in range(3, 20)]
     step = 0.5
     threads = 12
 
     x = Filter(h, length).generate()
     p1, r1, f1, s1 = dpcca(x, 2, step, s, processes=threads)
 
-    for k in [2 ** i for i in [8, 10, 12]]:
+    for k in [2**i for i in [8, 10, 12]]:
         x2 = movmean(x, k)
         p2, r2, f2, s2 = dpcca(x2, 2, step, s, processes=threads)
+
 
 # @profile
 def run_to_test_buffer():
@@ -52,8 +53,7 @@ def run_to_test_buffer():
     f_s = [f[s_i][vector_to_check][vector_to_check] for s_i in range(len(s_out))]
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # run_to_compare_with_matlab()
     run_to_test_buffer()

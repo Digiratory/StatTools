@@ -30,7 +30,7 @@ std::vector<double> get_exp_dist_vector(double lambda, int size){
 
     for(int i=0; i < size; i++)
         exp_vector.push_back(get_exponential_dist_value(lambda));
-    
+
     return exp_vector;
 }
 
@@ -43,7 +43,7 @@ std::vector<double> get_poisson_thread(std::vector<double> input_vector, double 
             output_vector.push_back(exp_val);
         }
     }
-    
+
     return output_vector;
 }
 
@@ -65,7 +65,7 @@ std::vector<double> core(std::vector<double> p_thread_cumsum, std::vector<double
     {
         int event_done = 0;
         std::vector<double> T_free;
-        std::vector<double> T_waiting; 
+        std::vector<double> T_waiting;
         double T_service = 1.0 / c;
 
         for (double event:p_thread_cumsum)
@@ -184,7 +184,7 @@ static PyObject* get_waiting_time(PyObject* self, PyObject* args){
 
     return curve_output;
 
-    
+
 
 }
 
@@ -223,7 +223,7 @@ static PyObject* fbm_core(PyObject* self, PyObject* args){
         PyErr_SetString(PyExc_ValueError, "\t![C-API ERROR| FBM] Array has wrong datatype! Only float and integer values are supported!");
         return NULL;
     }
-    
+
     double* F = (double*) PyArray_DATA((PyArrayObject*) input_array);
     npy_intp first_dim = (npy_intp)PyArray_SHAPE(input_array)[0];
     npy_intp second_dim = (npy_intp)PyArray_SHAPE(input_array)[1];
@@ -253,7 +253,7 @@ static PyObject* fbm_core(PyObject* self, PyObject* args){
 
         for (int i=l1; i < l2; i += s){
             for (int j=l1; j < l2; j += s){
-                
+
                 v1 = get_item(input_array, i - fl, j - fl);
                 v2 = get_item(input_array, i - fl, j + fl);
                 v3 = get_item(input_array, i + fl, j - fl);
@@ -261,7 +261,7 @@ static PyObject* fbm_core(PyObject* self, PyObject* args){
 
                 set_item(input_array, i, j, (v1 + v2 + v3 + v4) / 4);
             }
-        } 
+        }
 
         for (int i=0; i < n; i += s){
             for (int j=fl; j < l2; j += s){
@@ -322,7 +322,7 @@ static struct PyModuleDef module = {
 };
 
 
-PyMODINIT_FUNC 
+PyMODINIT_FUNC
 PyInit_C_StatTools(void) {
     import_array();
     PyObject *mod = PyModule_Create(&module);
@@ -360,14 +360,14 @@ int main() {
     // double* u_pointer = U.data();
 
     // std::vector<double> curve = model(numbers, U);
-    
+
     // for(int i =0 ; i < 5; i ++){
     //     std::cout << curve[i] <<std::endl;
     // }
-    
+
     /*Py_Initialize();
     PyRun_SimpleString("print('Started! ! !')");
-    
+
     Py_Finalize();*/
 
     return 0;

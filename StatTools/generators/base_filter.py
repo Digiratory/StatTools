@@ -1,13 +1,15 @@
+import platform
 from contextlib import closing
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from random import gauss
+
 import numpy as np
-from numpy.fft import rfft, irfft
+from numpy.fft import irfft, rfft
 from numpy.random import normal
-from StatTools.analysis.dfa import DFA
 from tqdm import tqdm
-import platform
+
+from StatTools.analysis.dfa import DFA
 
 
 class Filter:

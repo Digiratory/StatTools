@@ -39,7 +39,7 @@ vector<double> polynomialfit(int obs, int degree, vector<double> dx, vector<doub
     vector<double> store;
 
     gsl_multifit_linear_workspace *ws;
-    gsl_matrix *cov, *X; 
+    gsl_matrix *cov, *X;
     gsl_vector *y, *c;
     double chisq;
 
@@ -70,11 +70,11 @@ vector<double> polynomialfit(int obs, int degree, vector<double> dx, vector<doub
     gsl_matrix_free(cov);
     gsl_vector_free(y);
     gsl_vector_free(c);
-    return store; 
+    return store;
 }
 
 vector<double> polyval(vector<int> dx, vector<double> coeffs, int degree){
-    
+
     vector<double> result;
 
     if (degree == 2)
@@ -89,7 +89,7 @@ vector<double> polyval(vector<int> dx, vector<double> coeffs, int degree){
         result.push_back(coeffs[0] + coeffs[1] * i);
         }
     }
-    
+
     return result;
 }
 
@@ -108,7 +108,7 @@ vector<double> cumsum(vector<double> input_vector){
 double DFA(vector<double> arr, int degree, bool root){
 
     int s_max = (int)(arr.size() / 4);
-    
+
     vector<double> log_s_max;
 
     for (double n=1.6; n<log(s_max); n+=0.5){
@@ -131,7 +131,7 @@ double DFA(vector<double> arr, int degree, bool root){
     vector<double> y_Axis;
 
     for (double step: log_s_max){
-        
+
         int floor_step = floor(exp(step));
 
         vector<int> s;
@@ -171,7 +171,7 @@ double DFA(vector<double> arr, int degree, bool root){
             vector<double> F_2;
             for (int i=0; i < Y_cumsum_s.size(); i ++){
                 F_2.push_back(pow((Y_cumsum_s[i] - current_trend[i]), 2));
-            }            
+            }
 
             double F_2_sum = 0;
             for (double y : F_2){
@@ -179,7 +179,7 @@ double DFA(vector<double> arr, int degree, bool root){
             }
             F_2_sum /= s.size();
             F_q_s_sum += pow(F_2_sum, (degree / 2));
-            
+
             for (int j=0; j < s.size(); j ++){
                 s[j] += floor_step;
             }
@@ -188,8 +188,8 @@ double DFA(vector<double> arr, int degree, bool root){
         }
 
         double F1 = pow(((1.0 / cycles_amount) * F_q_s_sum), (1.0/degree));
-        
-        
+
+
         x_Axis.push_back(log(floor_step));
 
         if (root){
@@ -199,7 +199,7 @@ double DFA(vector<double> arr, int degree, bool root){
             y_Axis.push_back(log(F1));
         }
     }
-    
+
     vector<double> last_fit = polynomialfit(x_Axis.size(), 2, x_Axis, y_Axis);
 
     return last_fit[1];
@@ -236,5 +236,5 @@ int main(int argc, char *argv[])
     }
     else{
         std::cout<< "NO INPUT FILE!" << std::endl;
-    }    
+    }
 }

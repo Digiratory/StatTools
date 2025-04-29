@@ -1,8 +1,10 @@
-import numpy as np
-from typing import Union, Iterable, Tuple
+from typing import Iterable, Tuple, Union
 
-def _fa_worker(array: np.ndarray, step: float, S:float) -> float:
-    """Core of FA algorithm. 
+import numpy as np
+
+
+def _fa_worker(array: np.ndarray, step: float, S: float) -> float:
+    """Core of FA algorithm.
 
     Args:
         arrays (np.ndarray): preprocessed (integrated) arrays
@@ -16,14 +18,13 @@ def _fa_worker(array: np.ndarray, step: float, S:float) -> float:
     Fv = np.zeros((array.shape[0], len(V)), dtype=float)
     for v_i, v in enumerate(V):
         Fv[:, v_i] = array[:, v] - array[:, v + S]
-    F2 = np.mean(Fv**2,axis=1)
+    F2 = np.mean(Fv**2, axis=1)
     return F2
 
 
-def fa(arr: np.ndarray, 
-       step: float, 
-       s: Union[int, Iterable], 
-       n_integral=1) -> Tuple[np.ndarray, np.ndarray]:
+def fa(
+    arr: np.ndarray, step: float, s: Union[int, Iterable], n_integral=1
+) -> Tuple[np.ndarray, np.ndarray]:
     """Execute Fluctuational Analysis for time series
 
     Basic usage:
@@ -46,10 +47,12 @@ def fa(arr: np.ndarray,
         Tuple[np.ndarray, np.ndarray]: F^2(S), Scales
     """
     if len(arr.shape) > 2:
-        raise ValueError(f"Unsupported dimention of input signals array: expected 1 or 2, got {arr.shape}")
-    
+        raise ValueError(
+            f"Unsupported dimention of input signals array: expected 1 or 2, got {arr.shape}"
+        )
+
     if len(arr.shape) == 1:
-        cumsum_arr = arr[np.newaxis, :]    
+        cumsum_arr = arr[np.newaxis, :]
     else:
         cumsum_arr = arr
 
@@ -70,7 +73,6 @@ def fa(arr: np.ndarray,
 
     s_current = [s] if not isinstance(s, Iterable) else s
 
-    
     for _ in range(n_integral):
         cumsum_arr = np.cumsum(cumsum_arr, axis=1)
 
@@ -79,9 +81,4 @@ def fa(arr: np.ndarray,
     for s_idx, s in enumerate(s_current):
         F[:, s_idx] = _fa_worker(cumsum_arr, step, s)
 
-    return (
-        F[0] if len(arr.shape) == 1 else F,
-        s_current
-    )
-
-
+    return (F[0] if len(arr.shape) == 1 else F, s_current)

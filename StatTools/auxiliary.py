@@ -1,14 +1,15 @@
 import operator
 import time
 from contextlib import closing
-from multiprocessing import Value, Lock, Array, cpu_count, Pool
-from threading import Thread
-from numpy import ndarray, array, frombuffer, copyto, s_
-from typing import Union
 from ctypes import c_double, c_int64
-from functools import reduce, partial
+from functools import partial, reduce
+from multiprocessing import Array, Lock, Pool, Value, cpu_count
 from operator import mul
+from threading import Thread
+from typing import Union
+
 import numpy
+from numpy import array, copyto, frombuffer, ndarray, s_
 
 
 class SharedBuffer:
@@ -115,7 +116,7 @@ class SharedBuffer:
     def __get_handle(self):
         return frombuffer(self.buffer.get_obj(), dtype=self.dtype).reshape(self.shape)
 
-    def write(self, arr: ndarray, by_1_st_dim:bool=False) -> None:
+    def write(self, arr: ndarray, by_1_st_dim: bool = False) -> None:
         if arr.shape != self.shape:
             raise ValueError(f"Input array must have the same shape! arr: {arr.shape}")
 
@@ -145,7 +146,6 @@ class SharedBuffer:
     def to_array(self):
         return self.__get_handle().reshape(self.shape)
 
-
     @staticmethod
     def buffer_init(vars_to_update):
         globals().update(vars_to_update)
@@ -155,18 +155,13 @@ class SharedBuffer:
         return globals()[name]
 
 
-
 class PearsonParallel:
-
     """
 
-        КОД СТАРЫЙ, НЕ РЕФАКТОРИЛ!
+    КОД СТАРЫЙ, НЕ РЕФАКТОРИЛ!
 
 
     """
-
-
-
 
     def __init__(self, input_array):
 
@@ -174,15 +169,19 @@ class PearsonParallel:
             try:
                 input_array = numpy.loadtxt(input_array)
             except OSError:
-                error_str = "\n    The file either doesn't exit or you use a wrong path!"
+                error_str = (
+                    "\n    The file either doesn't exit or you use a wrong path!"
+                )
                 raise NameError(error_str)
 
         if isinstance(input_array, list):
             try:
                 input_array = numpy.array(input_array)
             except numpy.VisibleDeprecationWarning:
-                error_str = "\n    Error occurred when converting list to numpy array! " \
-                            "\n    List probably has different dimensions!"
+                error_str = (
+                    "\n    Error occurred when converting list to numpy array! "
+                    "\n    List probably has different dimensions!"
+                )
                 raise NameError(error_str)
 
         if input_array.ndim == 1:
@@ -190,7 +189,9 @@ class PearsonParallel:
             raise NameError(error_str)
 
         if numpy.size(input_array) < pow(10, 5):
-            print("\n    PearsonParallel Warning: Working in parallel mode with such small arrays is not effective !")
+            print(
+                "\n    PearsonParallel Warning: Working in parallel mode with such small arrays is not effective !"
+            )
 
         self.arr = input_array
 
@@ -204,31 +205,41 @@ class PearsonParallel:
     def create_matrix(self, threads=cpu_count(), progress_bar=False):
 
         if threads < 1:
-            error_str = "\n    PearsonParallel Error: There is no point of calling this method using less than 2 " \
-                        "threads since for loop is going to be faster!"
+            error_str = (
+                "\n    PearsonParallel Error: There is no point of calling this method using less than 2 "
+                "threads since for loop is going to be faster!"
+            )
             raise NameError(error_str)
 
         if len(self.arr) == 2:
             return numpy.corrcoef(self.arr[0], self.arr[1])[0][1]
 
         shared_array = Array(c_double, self.quantity * self.length, lock=True)
-        numpy.copyto(numpy.frombuffer(shared_array.get_obj()).reshape(self.arr.shape), self.arr)
+        numpy.copyto(
+            numpy.frombuffer(shared_array.get_obj()).reshape(self.arr.shape), self.arr
+        )
         del self.arr
 
         result_matrix = Array(c_double, self.quantity * self.quantity, lock=True)
 
-        bar_counter = Value('i', 0)
+        bar_counter = Value("i", 0)
         bar_lock = Lock()
 
+        with closing(
+            Pool(
+                processes=threads,
+                initializer=self.global_initializer,
+                initargs=(shared_array, bar_counter, bar_lock, result_matrix),
+            )
+        ) as pool:
+            pool.map(
+                partial(self.corr_matrix, quantity=self.quantity, length=self.length),
+                self.working_ranges,
+            )
 
-
-        with closing(Pool(processes=threads, initializer=self.global_initializer, initargs=(shared_array,
-                                                                                            bar_counter,
-                                                                                            bar_lock,
-                                                                                            result_matrix))) as pool:
-            pool.map(partial(self.corr_matrix, quantity=self.quantity, length=self.length), self.working_ranges)
-
-        ans = numpy.frombuffer((result_matrix.get_obj())).reshape((self.quantity, self.quantity))
+        ans = numpy.frombuffer((result_matrix.get_obj())).reshape(
+            (self.quantity, self.quantity)
+        )
         for i, j in zip(range(len(ans)), range(len(ans))):
             ans[i][j] = 1.0
         return ans
@@ -277,10 +288,14 @@ class PearsonParallel:
     @staticmethod
     def corr_matrix(working_range, quantity, length):
         def get_row(index):
-            return numpy.frombuffer(shared_array.get_obj()).reshape((quantity, length))[index]
+            return numpy.frombuffer(shared_array.get_obj()).reshape((quantity, length))[
+                index
+            ]
 
         def write_to_matrix(value, r1, r2):
-            numpy.frombuffer(matrix.get_obj()).reshape((quantity, quantity))[r1][r2] = value
+            numpy.frombuffer(matrix.get_obj()).reshape((quantity, quantity))[r1][
+                r2
+            ] = value
 
         start = working_range[0]
         stop = working_range[1]
@@ -337,4 +352,3 @@ class CheckNumpy:
                 raise ValueError("Cannot cast input list to numpy array!")
         else:
             raise ValueError("Only list or numpy.ndarray can be used as input data!")
-

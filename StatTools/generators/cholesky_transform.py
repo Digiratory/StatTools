@@ -1,12 +1,13 @@
+from collections.abc import Iterable
 from multiprocessing import cpu_count
 from typing import Union
-from collections.abc import Iterable
+
+import pandas as pd
+from numpy import full, matmul, mean, ndarray
+from numpy.linalg import cholesky
 
 from StatTools.analysis.dfa import DFA
 from StatTools.generators.base_filter import FilteredArray
-from numpy import full, matmul, mean, ndarray
-from numpy.linalg import cholesky
-import pandas as pd
 
 
 class CorrelatedArray:
@@ -44,8 +45,16 @@ class CorrelatedArray:
         by your own!
     """
 
-    def __init__(self, h=None, quantity=None, length=None, data=None, set_mean=0, set_std=1,
-                 threads=cpu_count()):
+    def __init__(
+        self,
+        h=None,
+        quantity=None,
+        length=None,
+        data=None,
+        set_mean=0,
+        set_std=1,
+        threads=cpu_count(),
+    ):
 
         if data is not None:
             self.length = length if length is not None else len(data[0])
@@ -53,15 +62,20 @@ class CorrelatedArray:
             self.dataset = data
         else:
             if length is None or quantity is None:
-                raise TypeError(f"Didn't specify {'length' if length is None else 'quantity'} . . .")
+                raise TypeError(
+                    f"Didn't specify {'length' if length is None else 'quantity'} . . ."
+                )
 
-            self.dataset = FilteredArray(h, length, set_mean, set_std).generate(n_vectors=quantity, progress_bar=False,
-                                                                                threads=threads)
+            self.dataset = FilteredArray(h, length, set_mean, set_std).generate(
+                n_vectors=quantity, progress_bar=False, threads=threads
+            )
             self.quantity, self.length = quantity, length
 
         self.set_mean, self.set_std, self.threads = set_mean, set_std, threads
 
-    def create(self, corr_target: Union[float, Iterable, ndarray], h_control=False) -> pd.DataFrame:
+    def create(
+        self, corr_target: Union[float, Iterable, ndarray], h_control=False
+    ) -> pd.DataFrame:
         """
         Main method.
         1. For each input corr coefficient I create Rxx matrix which consist of
@@ -90,29 +104,35 @@ class CorrelatedArray:
                     Rxx[i][j] = 1
 
             chol_transform_matrix = cholesky(Rxx)
-            correlated_vectors = pd.DataFrame(matmul(chol_transform_matrix, self.dataset), index=indices)
+            correlated_vectors = pd.DataFrame(
+                matmul(chol_transform_matrix, self.dataset), index=indices
+            )
 
             if h_control:
                 if self.threads != 1:
-                    h_estimated = DFA(correlated_vectors.to_numpy()).parallel_2d(threads=self.threads)
+                    h_estimated = DFA(correlated_vectors.to_numpy()).parallel_2d(
+                        threads=self.threads
+                    )
                 else:
                     h_estimated = DFA(correlated_vectors.to_numpy()).find_h()
 
-                correlated_vectors.insert(0, 'H_est', h_estimated)
+                correlated_vectors.insert(0, "H_est", h_estimated)
 
             if isinstance(self.corr_target, ndarray):
                 return correlated_vectors
 
-            result = correlated_vectors if result.size == 0 else result.append(correlated_vectors)
+            result = (
+                correlated_vectors
+                if result.size == 0
+                else result.append(correlated_vectors)
+            )
 
         return result
 
 
-if __name__ == '__main__':
-    "Simple test. Here I create (100, 1024) array with given H = 1.5 then transform it" \
-    "using Cholesky distribution"
+if __name__ == "__main__":
+    "Simple test. Here I create (100, 1024) array with given H = 1.5 then transform it" "using Cholesky distribution"
 
     d = FilteredArray(1.5, 1024, set_mean=10, set_std=3).generate(n_vectors=100)
 
     x = CorrelatedArray(data=d, threads=1).create(0.7, h_control=True).to_numpy()
-
