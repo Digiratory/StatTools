@@ -30,9 +30,9 @@ def fa(
     Basic usage:
         You can get whole F(s) function for first vector as:
         ```python
-            from StatTools.analysis import fa
-            s_vals = [i**2 for i in range(1, 5)]
-            F, Scales = fa(input_array, 0.5, s_vals)
+        from StatTools.analysis import fa
+        s_vals = [i**2 for i in range(1, 5)]
+        F, Scales = fa(input_array, 0.5, s_vals)
         ```
     Args:
         arr (np.ndarray): dataset array(s), If multiple signals, the first dimendtion is signal index (N, Samples).

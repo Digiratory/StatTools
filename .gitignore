@@ -4,6 +4,7 @@
 build/*
 dist/*
 StatTools.egg-info/*
+*.pyd
 
 .vscode/*
 .venv/*
@@ -12,3 +13,6 @@ StatTools/_version.py
 FluctuationAnalysisTools.egg-info/*
 wheelhouse/*
 .DS_Store
+docs/build/*
+docs/source/StatTools*
+docs/source/modules.rst

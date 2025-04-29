@@ -33,6 +33,29 @@ pre-commit install
 8. Push to GitHub: Push your committed changes to your forked repository on GitHub.
 9. Create a pull request from [a fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork) or from your branch.
 
+## Documentation
+
+Please, write a documentation string for all public functions, classes, and methods. This will help other developers understand how to use your code and make it easier for them to contribute to the project in the future.
+
+In the scope of the current project, please follow the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) for docstrings. Also, use an explicit type annotations. For, example:
+
+```python
+def func(arg1: int, arg2: str) -> bool:
+    """Summary line.
+
+    Extended description of function.
+
+    Args:
+        arg1 (int): Description of arg1
+        arg2 (str): Description of arg2
+
+    Returns:
+        bool: Description of return value
+
+    """
+    return True
+```
+
 ## Commit Messages
 
 * Use the present tense when describing changes (e.g., "Add new feature" instead of "Added new feature").
@@ -45,3 +68,20 @@ pre-commit install
 * Provide as much information as possible about the problem, including any relevant code snippets or steps to reproduce.
 
 By following these guidelines, we can ensure that our contributions are high-quality and easy for others to understand.
+
+## How to build documentation
+
+For documentation, this project uses Sphinx.
+
+First of all, you need install sphinx and all necessary dependencies. You can do it by running the following command:
+
+```bash
+pip install .[docs]
+```
+
+Then, you can build the documentation by running the following command:
+
+```bash
+sphinx-apidoc -f -o docs/source ./StatTools
+sphinx-build -M html ./docs/source ./docs/build
+```
