@@ -12,3 +12,4 @@ StatTools/_version.py
 FluctuationAnalysisTools.egg-info/*
 wheelhouse/*
 .DS_Store
+research/out/*
