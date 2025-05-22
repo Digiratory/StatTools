@@ -21,6 +21,12 @@ Or you can clone the repository and build it using the command
 pip install .
 ```
 
+## Examples
+
+You can find examples and published usages in the folder [Research](./research/readme.md)
+
+If you used the project in your paper, you are welcome to ask us to add reference via a Pull Request or an Issue.
+
 ## Basis usage
 
 1. To create a simple dataset with given Hurst parameter:
