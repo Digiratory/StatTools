@@ -48,16 +48,18 @@ correlated_vectors = Filter(h, vectors_length).generate(n_vectors=total_vectors,
 1. Example of sequence generation based on the Hurst exponent.
 
 ```python
-from StatTools.generators.hurst_generator import LBFBmGenerator
-h = 0.8             # choose Hurst parameter
-filter_len = 40     # length of the optimized filter
-base = 1.2          # the basis for the filter optimization algorithm
-target_len = 4000   # number of generation iterations
+from StatTools.generators.lbfbm_generator import LBFBmGenerator
 
-generator = LBFBmGenerator(h, filter_len, base)
-signal = []
-for value in islice(generator, target_len):
-    signal.append(value)
+# Parameters
+hurst_exponent = 1.2   # choose Hurst parameter H ∈ (0, 2)
+base = 1.2             # the basis for the filter optimization algorithm
+sequence_length = 4000 # Desired length of the generated signal
+
+# Create the generator instance
+generator = LBFBmGenerator(h=hurst_exponent, base=base, length=sequence_length)
+
+# Generate the signal
+signal = list(generator)
 ```
 
 For more information and generator validation, see [lbfbm_generator.ipynb](/research/lbfbm_generator.ipynb).
