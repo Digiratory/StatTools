@@ -60,15 +60,15 @@ class EnhancedKalmanFilter(KalmanFilter):
             return np.array([[1, dt], [0, 1]])
         if order == 2:
             return np.array(
-                [[-A[1] - A[2], A[2] * dt], [(-1 - A[1] - A[2]) / dt, A[2]]]
+                [[-A[0] - A[1], A[1] * dt], [(-1 - A[0] - A[1]) / dt, A[1]]]
             )
         # TODO: add dt for order 3
         if order == 3:
             return np.array(
                 [
-                    [-A[1] - A[2] - A[3], A[2] + 2 * A[3], -A[3]],
-                    [-1 - A[1] - A[2] - A[3], A[2] + 2 * A[3], -A[3]],
-                    [-1 - A[1] - A[2] - A[3], -1 + A[2] + 2 * A[3], -A[3]],
+                    [-A[0] - A[1] - A[2], A[1] + 2 * A[2], -A[2]],
+                    [-1 - A[0] - A[1] - A[2], A[1] + 2 * A[2], -A[2]],
+                    [-1 - A[0] - A[1] - A[2], -1 + A[1] + 2 * A[2], -A[2]],
                 ]
             )
         raise ValueError(f"Order {order} is not supported")
