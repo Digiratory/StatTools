@@ -1,5 +1,6 @@
 # FluctuationAnalysisTools
 
+[![DOI](https://zenodo.org/badge/535810183.svg)](https://doi.org/10.5281/zenodo.18098519)
 [![GitHub Release](https://img.shields.io/github/v/release/Digiratory/StatTools?link=https%3A%2F%2Fpypi.org%2Fproject%2FFluctuationAnalysisTools%2F)](https://pypi.org/project/FluctuationAnalysisTools/)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Digiratory/StatTools/run-tests.yml?label=tests)](https://github.com/Digiratory/StatTools/actions)
 [![GitHub License](https://img.shields.io/github/license/Digiratory/StatTools)](https://github.com/Digiratory/StatTools/blob/main/LICENSE.txt)
@@ -9,14 +10,21 @@ A Python library for creating and processing long-term dependent datasets, with 
 
 ## Table of Contents
 
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Research and Examples](#research-and-examples)
-- [Contributing](#contributing)
-- [License](#license)
-- [Citation](#citation)
+- [FluctuationAnalysisTools](#fluctuationanalysistools)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Quick Start](#quick-start)
+    - [Generating Synthetic Data](#generating-synthetic-data)
+    - [Analyzing Time Series](#analyzing-time-series)
+      - [Detrended Fluctuation Analysis](#detrended-fluctuation-analysis)
+  - [Support](#support)
+  - [Research and Examples](#research-and-examples)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [Citation](#citation)
+  - [Changelog](#changelog)
 
 ## Features
 
