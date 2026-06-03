@@ -40,6 +40,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest-timeout"]
+experimental = ["filterpy"]
 
 [project.urls]
 Repository = "https://github.com/Digiratory/FluctuationAnalysisTools.git"

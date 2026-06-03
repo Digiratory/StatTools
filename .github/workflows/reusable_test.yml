@@ -57,13 +57,15 @@ jobs:
         if: ${{ inputs.os != 'ubuntu-latest' }}
         shell: bash
         run: |
-          pip install wheelhouse/*.whl
+          WHEEL=$(ls wheelhouse/*.whl)
+          pip install "${WHEEL}[experimental,test]"
 
       - name: Install FluctuationAnalysisTools from sdist
         if: ${{ inputs.os == 'ubuntu-latest' }}
         shell: bash
         run: |
-          pip install wheelhouse/*.tar.gz
+          SDIST=$(ls wheelhouse/*.tar.gz)
+          pip install "${SDIST}[experimental,test]"
 
       - name: Run tests
         run: |
