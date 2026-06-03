@@ -62,7 +62,7 @@ def test_dfa_worker_1d_input():
     """Test dfa_worker with 1D input (should be normalized to 2D)"""
     np.random.seed(42)
     # generate_fbn returns (1, length), we need 2D for dfa_worker
-    data_2d = generate_fbn(hurst=0.5, length=1000, method="kasdin")
+    data_2d = generate_fbn(hurst=0.5, length=2**10, method="kasdin")
 
     result = dfa_worker(indices=0, arr=data_2d, degree=2)
 
@@ -81,7 +81,7 @@ def test_dfa_worker_2d_input():
     # Generate multiple time series
     data_list = []
     for h in [0.5, 1.0, 1.5]:
-        series = generate_fbn(hurst=h, length=1000, method="kasdin").flatten()
+        series = generate_fbn(hurst=h, length=2**10, method="kasdin").flatten()
         data_list.append(series)
     data = np.array(data_list)
 
@@ -98,12 +98,12 @@ def test_dfa_worker_2d_input():
 def test_dfa_worker_custom_s_values():
     """Test dfa_worker with custom s_values"""
     np.random.seed(42)
-    data_2d = generate_fbn(hurst=0.5, length=1000, method="kasdin")
+    data_2d = generate_fbn(hurst=0.5, length=2**10, method="kasdin")
     custom_s = [16, 32, 64, 128]
 
     result = dfa_worker(indices=0, arr=data_2d, degree=2, s_values=custom_s)
 
-    s_vals, f2_vals = result[0]
+    s_vals, _ = result[0]
     assert len(s_vals) <= len(custom_s)  # Some may be filtered out
     assert all(s in custom_s for s in s_vals)
 
@@ -171,7 +171,7 @@ def test_dfa_2d_input():
     data_list = []
     h_list = []
     for h in TEST_H_VALUES:
-        series = generate_fbn(hurst=h, length=1000, method="kasdin").flatten()
+        series = generate_fbn(hurst=h, length=2**12, method="kasdin").flatten()
         data_list.append(series)
         h_list.append(h)
     data = np.array(data_list)
@@ -224,7 +224,7 @@ def test_dfa_2d_parallel():
 def test_dfa_different_degrees():
     """Test dfa function with different polynomial degrees"""
     np.random.seed(42)
-    data = generate_fbn(hurst=1.0, length=2**12, method="kasdin").flatten()
+    data = generate_fbn(hurst=1.0, length=2**10, method="kasdin").flatten()
 
     s1, _ = dfa(data, degree=1, processes=1)
     s2, _ = dfa(data, degree=2, processes=1)
@@ -272,7 +272,7 @@ def test_dfa_short_input():
 
 def test_dfa_s_values_truncate():
     np.random.seed(42)
-    data_2d = generate_fbn(hurst=0.5, length=1000, method="kasdin")
+    data_2d = generate_fbn(hurst=0.5, length=2**10, method="kasdin")
     # 500 grater than 1000/4, must truncate input s_values to valid
     custom_s = [16, 32, 64, 128, 500]
     ref_s = [16, 32, 64, 128]
@@ -286,7 +286,7 @@ def test_dfa_s_values_truncate():
 
 def test_dfa_s_values_all_invalid():
     np.random.seed(42)
-    data_2d = generate_fbn(hurst=0.5, length=1000, method="kasdin")
+    data_2d = generate_fbn(hurst=0.5, length=2**10, method="kasdin")
     # must raise ValueError("... No valid scales found for analysis")
     invalid_s = [500, 600, 700]
     with pytest.raises(ValueError, match="No valid scales found for analysis"):
@@ -295,7 +295,7 @@ def test_dfa_s_values_all_invalid():
 
 def test_dfa_single_s_value():
     np.random.seed(42)
-    data_2d = generate_fbn(hurst=0.5, length=1000, method="kasdin")
+    data_2d = generate_fbn(hurst=0.5, length=2**10, method="kasdin")
 
     custom_s = 32
 
@@ -310,7 +310,7 @@ def test_dfa_single_s_value():
 
 def test_dfa_s_values_empty():
     np.random.seed(42)
-    data_2d = generate_fbn(hurst=0.5, length=1000, method="kasdin")
+    data_2d = generate_fbn(hurst=0.5, length=2**10, method="kasdin")
     # must raise ValueError("Input s_values is empty.")
     custom_s = []
     with pytest.raises(ValueError, match="Input s_values is empty."):
