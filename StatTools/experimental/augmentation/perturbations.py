@@ -26,6 +26,7 @@ def add_noise(
     sigma_noise = sigma_signal / ratio
     rng = np.random.default_rng(seed=noise_seed)
     noise = rng.normal(0, sigma_noise, size=signal.shape)
+    noise -= np.mean(noise)
     return signal + noise, noise
 
 
