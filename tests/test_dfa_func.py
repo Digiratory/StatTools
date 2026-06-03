@@ -200,7 +200,7 @@ def test_dfa_2d_parallel():
     data_list = []
     h_list = []
     for h in TEST_H_VALUES:
-        series = generate_fbn(hurst=h, length=1000, method="kasdin").flatten()
+        series = generate_fbn(hurst=h, length=2**12, method="kasdin").flatten()
         data_list.append(series)
         h_list.append(h)
     data = np.array(data_list)
@@ -224,11 +224,11 @@ def test_dfa_2d_parallel():
 def test_dfa_different_degrees():
     """Test dfa function with different polynomial degrees"""
     np.random.seed(42)
-    data = generate_fbn(hurst=1.0, length=1000, method="kasdin").flatten()
+    data = generate_fbn(hurst=1.0, length=2**12, method="kasdin").flatten()
 
-    s1, f2_1 = dfa(data, degree=1, processes=1)
-    s2, f2_2 = dfa(data, degree=2, processes=1)
-    s3, f2_3 = dfa(data, degree=3, processes=1)
+    s1, _ = dfa(data, degree=1, processes=1)
+    s2, _ = dfa(data, degree=2, processes=1)
+    s3, _ = dfa(data, degree=3, processes=1)
 
     # All should return valid results
     assert len(s1) > 0
@@ -278,7 +278,7 @@ def test_dfa_s_values_truncate():
     ref_s = [16, 32, 64, 128]
     # must warn DFA warning: only following S values are in use:
     with pytest.warns(UserWarning, match="only following S values are in use"):
-        s_vals, f2_vals = dfa(dataset=data_2d, degree=2, s_values=custom_s)
+        s_vals, _ = dfa(dataset=data_2d, degree=2, s_values=custom_s)
 
     assert len(s_vals) == len(ref_s)  # Some must be filtered out
     assert all(s in ref_s for s in s_vals)
@@ -299,7 +299,7 @@ def test_dfa_single_s_value():
 
     custom_s = 32
 
-    s_vals, f2_vals = dfa(dataset=data_2d, degree=2, s_values=custom_s)
+    s_vals, _ = dfa(dataset=data_2d, degree=2, s_values=custom_s)
     assert len(s_vals) == 1
     assert s_vals[0] == custom_s
 
