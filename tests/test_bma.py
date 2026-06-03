@@ -63,6 +63,8 @@ def test_dataset():
 # UTILITY: estimate Hurst exponent
 # ------------------------------------------------------------
 def estimate_hurst(F, s):
+    s = s[1:-1]
+    F = F[1:-1]
     return stats.linregress(np.log(s), np.log(F)).slope
 
 

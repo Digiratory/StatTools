@@ -25,6 +25,11 @@ class KasdinGenerator:
             Defaults to ``length``.
         seed (int | None): Seed for the internal RNG. Ignored when
             ``random_generator`` is provided explicitly.
+        filter_type (str): Backend used to apply the AR filter. Options:
+
+            - ``"lfilter"`` — standard scipy lfilter; ``filter_coefficients_length``
+              defaults to ``length``, so complexity is O(N²) for large signals.
+            - ``"lfilter_truncated"`` — caps ``filter_coefficients_length`` at 2**14 for large signals.
     Raises:
         ValueError: If ``length`` is less than 1 or ``h`` is out of range.
         StopIteration('Sequence exhausted'): If the iterator is advanced past the end.
@@ -44,6 +49,7 @@ class KasdinGenerator:
         normalize=True,
         filter_coefficients_length=None,
         seed: Optional[int] = None,
+        filter_type: str = "lfilter",
     ) -> None:
         if length is not None and length < 1:
             raise ValueError("Length must be more than 1")
@@ -54,7 +60,10 @@ class KasdinGenerator:
             rng = np.random.default_rng(seed)
             random_generator = iter(rng.standard_normal, None)
         self.random_generator = random_generator
-        self.filter_coefficients_length = filter_coefficients_length
+        if filter_type == "lfilter_truncated" and filter_coefficients_length is None:
+            self.filter_coefficients_length = min(length, 2**14)
+        else:
+            self.filter_coefficients_length = filter_coefficients_length
 
         beta = self.get_beta()
         self.init_filter_coefficients(beta)
@@ -63,7 +72,15 @@ class KasdinGenerator:
         random_sequence = np.fromiter(
             islice(random_generator, self.length), dtype=np.float64
         )
-        self.sequence = lfilter(1, self.filter_coefficients, random_sequence)
+        if filter_type == "lfilter":
+            self.sequence = lfilter(1, self.filter_coefficients, random_sequence)
+        elif filter_type == "lfilter_truncated":
+            self.sequence = lfilter(
+                np.array([1.0]), self.filter_coefficients, random_sequence
+            )
+        else:
+            raise ValueError(f"Unknown filter type: {filter_type}")
+
         if np.any(np.isnan(self.sequence)) or np.any(np.isinf(self.sequence)):
             warnings.warn("Generated sequence contains invalid values.")
 
@@ -132,6 +149,11 @@ class ERKasdinGenerator(KasdinGenerator):
         filter_coefficients_length (int, optional): Number of filter coefficients.
         seed (int | None): Seed for the internal RNG. Ignored when
             ``random_generator`` is provided explicitly.
+        filter_type (str): Backend used to apply the AR filter. Options:
+
+            - ``"lfilter"`` — standard scipy lfilter; ``filter_coefficients_length``
+              defaults to ``length``, so complexity is O(N²) for large signals.
+            - ``"lfilter_truncated"`` — caps ``filter_coefficients_length`` at 2**14 for large signals.
     """
 
     def __init__(
@@ -142,6 +164,7 @@ class ERKasdinGenerator(KasdinGenerator):
         normalize=True,
         filter_coefficients_length=None,
         seed: Optional[int] = None,
+        filter_type: str = "lfilter",
     ) -> None:
         self._effective_h = h
         self.steps_count = 0
@@ -166,6 +189,7 @@ class ERKasdinGenerator(KasdinGenerator):
             normalize,
             filter_coefficients_length,
             seed,
+            filter_type,
         )
 
         if self.steps_count > 0:
@@ -195,6 +219,7 @@ def create_kasdin_generator(
     normalize=True,
     filter_coefficients_length=None,
     seed: Optional[int] = None,
+    filter_type: str = "lfilter",
 ) -> KasdinGenerator | ERKasdinGenerator:
     """Factory for creating a Kasdin generator.
 
@@ -206,9 +231,22 @@ def create_kasdin_generator(
         normalize (bool): Zero-mean unit-variance normalisation.
         filter_coefficients_length (int, optional): Filter order.
         seed (int | None): RNG seed. Ignored when ``random_generator`` is given.
+        filter_type (str): Backend used to apply the AR filter. Options:
+
+            - ``"lfilter"`` — standard scipy lfilter; ``filter_coefficients_length``
+              defaults to ``length``, so complexity is O(N²) for large signals.
+            - ``"lfilter_truncated"`` — caps ``filter_coefficients_length`` at 2**14 for large signals.
 
     Returns:
         KasdinGenerator for 0.5 <= h <= 1.5, ERKasdinGenerator otherwise.
     """
     cls = KasdinGenerator if 0.5 <= h <= 1.5 else ERKasdinGenerator
-    return cls(h, length, random_generator, normalize, filter_coefficients_length, seed)
+    return cls(
+        h,
+        length,
+        random_generator,
+        normalize,
+        filter_coefficients_length,
+        seed,
+        filter_type,
+    )
