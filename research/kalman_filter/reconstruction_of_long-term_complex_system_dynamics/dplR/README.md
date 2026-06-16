@@ -12,7 +12,7 @@ The `examples` directory contains a Jupyter notebook version of the Python prepr
 
 The Python script implements the deliberately simple preprocessing used before the proposed Kalman filtering procedure. Individual raw series are aligned by age, a mean age-growth curve is estimated across the available series and smoothed using a 51-year centered moving window, and each raw series is divided by the corresponding age-specific mean value.
 
-The R script implements a conventional dendrochronological baseline using the `dplR` package. The raw observations are subjected to Cook's power transformation, age-dependent spline detrending with a 50-year parameter, and signal-free standardization. 
+The R script implements a conventional dendrochronological baseline using the `dplR` package. The raw observations are subjected to Cook's power transformation, age-dependent spline detrending with a 50-year parameter, and signal-free standardization.
 
 ## How to run
 
@@ -43,4 +43,3 @@ python -m pip install notebook
 
 **Start JupyterLab**
 jupyter lab
-

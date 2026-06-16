@@ -52,17 +52,17 @@
 #   Description: NOAA Template Chronology file added 2018-12-19. NOAA Template Raw Measurements file added 2019-02-05.
 #--------------------
 # Publication
-#   Authors: 
-#   Journal_Name: 
-#   Published_Title: 
-#   Published_Date_or_Year: 
-#   Volume: 
-#   Pages: 
-#   Issue: 
-#   Report_Number: 
-#   DOI: 
-#   Full_Citation: 
-#   Abstract: 
+#   Authors:
+#   Journal_Name:
+#   Published_Title:
+#   Published_Date_or_Year:
+#   Volume:
+#   Pages:
+#   Issue:
+#   Report_Number:
+#   DOI:
+#   Full_Citation:
+#   Abstract:
 #--------------------
 # Funding_Agency
 #   Funding_Agency_Name:

@@ -1,7 +1,8 @@
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 try:
     root = Path(__file__).resolve().parents[1]
@@ -19,7 +20,9 @@ special_to_nan = [0.0, 0.001, 0.005, 0.010]
 
 pad = smooth_window // 2
 
-x = pd.read_csv(inp, sep="\t", comment="#", na_values="NA").rename(columns={"age_CE": "year"})
+x = pd.read_csv(inp, sep="\t", comment="#", na_values="NA").rename(
+    columns={"age_CE": "year"}
+)
 x.columns = ["year"] + [c[:-4] if c.endswith("_raw") else c for c in x.columns[1:]]
 x = x.set_index("year").apply(pd.to_numeric, errors="coerce")
 
@@ -53,7 +56,7 @@ a = np.full((m, len(spans)), np.nan)
 for j, c in enumerate(spans):
     y0, y1 = spans[c]
     v = x.loc[y0:y1, c].to_numpy(float)
-    a[:len(v), j] = v
+    a[: len(v), j] = v
 
 n_age = np.sum(~np.isnan(a), axis=1)
 g_raw = np.nanmean(a, axis=1)
@@ -71,7 +74,7 @@ y = pd.DataFrame(index=x.index, columns=x.columns, dtype=float)
 
 for c, (y0, y1) in spans.items():
     v = x.loc[y0:y1, c].to_numpy(float)
-    y.loc[y0:y1, c] = v / g[:len(v)]
+    y.loc[y0:y1, c] = v / g[: len(v)]
 
 y.insert(0, "year", y.index.astype(int))
 
@@ -83,10 +86,12 @@ y.to_csv(out, index=False)
 
 y_tree = y.drop(columns="year")
 
-b = np.full((max(y_tree[c].notna().sum() for c in y_tree.columns), y_tree.shape[1]), np.nan)
+b = np.full(
+    (max(y_tree[c].notna().sum() for c in y_tree.columns), y_tree.shape[1]), np.nan
+)
 for j, c in enumerate(y_tree.columns):
     v = y_tree[c].dropna().to_numpy(float)
-    b[:len(v), j] = v
+    b[: len(v), j] = v
 
 age_raw = np.arange(1, a.shape[0] + 1)
 age_norm = np.arange(1, b.shape[0] + 1)

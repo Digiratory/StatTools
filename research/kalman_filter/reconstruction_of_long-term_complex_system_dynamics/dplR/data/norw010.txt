@@ -1,5 +1,5 @@
 Forfjorddalen 2, Nordland county, Norway - NORW010
-Additional Site Information 
+Additional Site Information
 Andreas J. Kirchhefer
 
 
@@ -20,29 +20,29 @@ Reference:
 Published back to AD 1358 (EPS 85 criterion) in:
 
 Kirchhefer, A.J. 2001 Reconstruction of summer temperatures from tree-
-rings of Scots pine (Pinus sylvestris L.) in coastal northern Norway. 
+rings of Scots pine (Pinus sylvestris L.) in coastal northern Norway.
 The Holocene 11(1), 41-52.
 
 
-Site information: 
+Site information:
 - slope 15°W, moraine ridge, glacifluvial sediments, talus slope, open-
-canopy tree-line habitat (arctic-alpine-atlantic), living trees and 
+canopy tree-line habitat (arctic-alpine-atlantic), living trees and
 stumps, sampling area 0.5 km * 0.2 km
 Elevation Range 50-170m.
 - potential growth release due to logging in the 17th century.
 
-Please note, site Forfjorddalen (FORFJ1) will be contributed to the ITRDB 
-following publication. 
+Please note, site Forfjorddalen (FORFJ1) will be contributed to the ITRDB
+following publication.
 
 
-Measuring type: the first measurements with 0.01mm resolution 
+Measuring type: the first measurements with 0.01mm resolution
 (Tucson M-format), later 0.001 mm (Tucson L-format).
 
 
 Missing rings coding:
 In the 0.01mm-format, missing rings are zero.
 Others, internal coding with:
-        - zero: "not sure where the ring belongs exactly", 
+        - zero: "not sure where the ring belongs exactly",
         - 0.001: "very likely that it belongs here",
         - 0.005: some morphological evidence for the missing ring
         - 0.010: wedging ring
@@ -103,9 +103,9 @@ COFECHA output:
       Checked by             : H. ADAMS AND J. LUKAS
       Beginning year         :  877
       Ending year            : 1994
-      Principal investigators: Andreas J. Kirchhefer                         
+      Principal investigators: Andreas J. Kirchhefer
       Site name              : Forfjorddalen 2
-      Site location          : Norway       
+      Site location          : Norway
       Species information    : PISY SCOTS PINE
       Latitude               :   6848
       Longitude              :  01544

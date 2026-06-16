@@ -93,7 +93,7 @@ if (!is.null(drop_series) && length(drop_series) > 0) {
   if (length(missing) > 0) stop(paste("missing drop_series:", paste(missing, collapse = ", ")))
   rwl <- rwl[, setdiff(colnames(rwl), drop_series), drop = FALSE]
 }
-    
+
 mat <- as.matrix(rwl)
 
 special_mask <- Reduce(`|`, lapply(special_na, function(v) abs(mat - v) < tol))
