@@ -20,3 +20,4 @@ memory-bank/*
 .theia/*
 .prompts/*
 filter_matrices
+research/data
