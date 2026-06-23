@@ -245,7 +245,7 @@ def add_noise_filter_save_signals(
 if __name__ == "__main__":
     # Paths
     SIGNALS_DIR = Path(
-        "research/kalman_filter/reconstruction_of_long-term_complex_system_dynamics/data/model_signals"
+        "research/kalman_filter/reconstruction_of_long_term_complex_system_dynamics/data/model_signals"
     )
     SIGNALS_DIR.mkdir(parents=True, exist_ok=True)
 
