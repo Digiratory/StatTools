@@ -19,5 +19,6 @@ research/out/*
 memory-bank/*
 .theia/*
 .prompts/*
-filter_matrices
-research/data
+research/kalman_filter/filter_matrices
+research/kalman_filter/reconstruction_of_long-term_complex_system_dynamics/data/model_signals
+research/kalman_filter/reconstruction_of_long-term_complex_system_dynamics/data/output
