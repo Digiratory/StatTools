@@ -26,7 +26,7 @@ x = pd.read_csv(inp, sep="\t", comment="#", na_values="NA").rename(
 x.columns = ["year"] + [c[:-4] if c.endswith("_raw") else c for c in x.columns[1:]]
 x = x.set_index("year").apply(pd.to_numeric, errors="coerce")
 
-if keep_series:
+if keep_series is not None:
     missing = sorted(set(keep_series) - set(x.columns))
     if missing:
         raise ValueError(f"missing series: {missing}")
