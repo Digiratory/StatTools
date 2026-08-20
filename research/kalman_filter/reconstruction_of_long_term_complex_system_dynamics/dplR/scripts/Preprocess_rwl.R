@@ -137,3 +137,18 @@ write.csv(
   outfile,
   row.names = FALSE
 )
+
+crn <- chron(
+  rwi,
+  biweight = TRUE,
+  prewhiten = FALSE
+)
+
+write.csv(
+  data.frame(
+    year = as.integer(rownames(crn)),
+    crn
+  ),
+  file.path(outdir, paste0("chronology_dplr_", n_series_out, ".csv")),
+  row.names = FALSE
+)

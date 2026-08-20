@@ -1,20 +1,20 @@
 # NORW010 tree-ring preprocessing for the Kalman filtering experiment
 
-This folder contains small reproducibility scripts for the real-world dendrochronological example used in the Kalman filtering experiment. The scripts prepare ring-width index matrices from raw tree-ring measurements of Scots pine from the Forfjorddalen site in Nordland, northern Norway.
+This folder contains scripts for the NORW010 tree-ring example used in the Kalman filtering experiment. The data are ring-width measurements of Scots pine from the Forfjorddalen site in northern Norway.
 
-The dataset is publicly available from the NOAA Paleoclimatology archive under the identifier NORW010 and is associated with the coastal northern Norway temperature reconstruction by Kirchhefer. The raw dataset contains 71 individual ring-width measurement series from 36 Scots pine trees and spans 877-1994 CE.
+The dataset is available from the NOAA Paleoclimatology archive under the identifier NORW010 and is associated with the coastal northern Norway temperature reconstruction by Kirchhefer. It contains 71 ring-width measurement series from 36 Scots pine trees and spans 877-1994 CE.
 
-All executable scripts are located in the `scripts` directory. The `Download_rwl.R` script downloads the source NORW010 files from the NOAA Paleoclimatology archive and saves them to the `data` directory. The `preprocessingtrw.py` script performs the simple Python preprocessing pipeline and writes its output to `results/python`. The `Preprocess_rwl.R` script performs the conventional R/dplR preprocessing pipeline and writes its output to `results/dplr`.
+All executable scripts are located in the scripts directory. Download_rwl.R downloads the NORW010 source files to data. preprocessingtrw.py performs the Python preprocessing and writes its output to results/python. Preprocess_rwl.R performs the R/dplR preprocessing and writes its output to results/dplr.
 
-The `examples` directory contains a Jupyter notebook version of the Python preprocessing script.
+The examples directory contains a Jupyter notebook version of the Python preprocessing script.
 
-## What the scripts do
+# What the scripts do
 
-The Python script implements the deliberately simple preprocessing used before the proposed Kalman filtering procedure. Individual raw series are aligned by age, a mean age-growth curve is estimated across the available series and smoothed using a 51-year centered moving window, and each raw series is divided by the corresponding age-specific mean value.
+The Python script performs the preprocessing used before the proposed Kalman filtering procedure. Individual raw series are aligned by age, a mean age-growth curve is estimated across the available series and smoothed using a 51-year centered moving window, and each raw series is divided by the corresponding age-specific mean value.
 
-The R script implements a conventional dendrochronological baseline using the `dplR` package. The raw observations are subjected to Cook's power transformation, age-dependent spline detrending with a 50-year parameter, and signal-free standardization.
+The R script processes the same raw observations using the dplR package. The series are subjected to Cook's power transformation, age-dependent spline detrending with a 50-year parameter, and signal-free standardization. The resulting RWI series are combined into a mean chronology using Tukey's biweight robust mean with prewhitening disabled.
 
-## How to run
+# How to run
 
 ### using the RGui
 

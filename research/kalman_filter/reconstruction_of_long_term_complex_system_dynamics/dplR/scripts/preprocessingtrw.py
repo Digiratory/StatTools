@@ -12,8 +12,66 @@ except NameError:
 inp = root / "data" / "norw010-rwl-noaa.txt"
 outdir = root / "results" / "python"
 
-keep_series = None
-# keep_series = ['ff201a', 'ff201b', 'ff202a', 'ff202b', 'ff203a', 'ff203b', 'ff204a', 'ff205a', 'ff205b', 'ff207a', 'ff207b', 'ff208a', 'ff208b', 'ff209a', 'ff209b', 'ff210a', 'ff210b', 'ff211b', 'ff212a', 'ff213a', 'ff213b', 'ff216b', 'ff217a', 'ff217b', 'ff218a', 'ff218b', 'ff220a', 'ff221a', 'ff221b', 'ff222a', 'ff222b', 'ff223a', 'ff224a', 'ff224b', 'ff225a', 'ff225b', 'ff228a', 'ff229a', 'ff229b', 'ff230b', 'ff252b', 'ff253a', 'ff253c', 'ff254b', 'ff255b', 'ff256a', 'ff256b', 'ff257b', 'ff257c', 'ff258b', 'ff260b', 'ff260c', 'ff263b']
+# keep_series = None
+# drop_series = None
+drop_series = [
+    "ff201a",
+    "ff201b",
+    "ff202a",
+    "ff202b",
+    "ff203a",
+    "ff203b",
+    "ff204a",
+    "ff204b",
+    "ff205a",
+    "ff205b",
+    "ff207a",
+    "ff207b",
+    "ff208a",
+    "ff208b",
+    "ff209a",
+    "ff209b",
+    "ff210a",
+    "ff210b",
+    "ff211a",
+    "ff211b",
+    "ff213a",
+    "ff213b",
+    "ff216a",
+    "ff216b",
+    "ff217a",
+    "ff217b",
+    "ff218a",
+    "ff218b",
+    "ff220a",
+    "ff220b",
+    "ff221a",
+    "ff221b",
+    "ff222a",
+    "ff222b",
+    "ff224a",
+    "ff224b",
+    "ff225a",
+    "ff225b",
+    "ff228a",
+    "ff228b",
+    "ff229a",
+    "ff229b",
+    "ff252a",
+    "ff252b",
+    "ff253a",
+    "ff253c",
+    "ff254a",
+    "ff254b",
+    "ff255a",
+    "ff255b",
+    "ff256a",
+    "ff256b",
+    "ff257b",
+    "ff257c",
+    "ff260b",
+    "ff260c",
+]
 
 smooth_window = 51
 special_to_nan = [0.0, 0.001, 0.005, 0.010]
@@ -26,11 +84,17 @@ x = pd.read_csv(inp, sep="\t", comment="#", na_values="NA").rename(
 x.columns = ["year"] + [c[:-4] if c.endswith("_raw") else c for c in x.columns[1:]]
 x = x.set_index("year").apply(pd.to_numeric, errors="coerce")
 
-if keep_series is not None:
-    missing = sorted(set(keep_series) - set(x.columns))
+# if keep_series:
+#     missing = sorted(set(keep_series) - set(x.columns))
+#     if missing:
+#         raise ValueError(f"missing series: {missing}")
+#     x = x.loc[:, list(keep_series)]
+
+if drop_series:
+    missing = sorted(set(drop_series) - set(x.columns))
     if missing:
-        raise ValueError(f"missing series: {missing}")
-    x = x.loc[:, list(keep_series)]
+        raise ValueError(f"missing drop_series: {missing}")
+    x = x.drop(columns=list(drop_series))
 
 input_na = int(x.isna().sum().sum())
 
@@ -83,6 +147,7 @@ out = outdir / f"tree_rwi_python_{n_series_out}.csv"
 
 out.parent.mkdir(parents=True, exist_ok=True)
 y.to_csv(out, index=False)
+
 
 y_tree = y.drop(columns="year")
 
