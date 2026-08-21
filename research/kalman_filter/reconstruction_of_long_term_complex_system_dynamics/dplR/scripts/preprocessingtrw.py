@@ -12,8 +12,6 @@ except NameError:
 inp = root / "data" / "norw010-rwl-noaa.txt"
 outdir = root / "results" / "python"
 
-# keep_series = None
-# drop_series = None
 drop_series = [
     "ff201a",
     "ff201b",
@@ -83,12 +81,6 @@ x = pd.read_csv(inp, sep="\t", comment="#", na_values="NA").rename(
 )
 x.columns = ["year"] + [c[:-4] if c.endswith("_raw") else c for c in x.columns[1:]]
 x = x.set_index("year").apply(pd.to_numeric, errors="coerce")
-
-# if keep_series:
-#     missing = sorted(set(keep_series) - set(x.columns))
-#     if missing:
-#         raise ValueError(f"missing series: {missing}")
-#     x = x.loc[:, list(keep_series)]
 
 if drop_series:
     missing = sorted(set(drop_series) - set(x.columns))
